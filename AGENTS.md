@@ -5,6 +5,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), [CONTEXT.md](CONTEXT.md), and the [skil
 ## Project constraints
 
 - Keep the app mobile first. Verify touch interactions and narrow layouts before expanding desktop layouts.
+- Follow the project's designer for visual direction. Implement the supplied designs and preserve their intent.
 - Use React, TypeScript, PixiJS, Zustand, shadcn's **Base UI** components, and TanStack Router. Preserve these choices unless the task explicitly changes them.
 - Use the pnpm version pinned in `package.json`. Translate imported skill examples from `npm run` to `pnpm run`, `npx` for installed tools to `pnpm exec`, and `npx` for temporary tools to `pnpm dlx`.
 - Use Oxlint and Oxfmt. Preserve strict TypeScript checking.
@@ -15,7 +16,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), [CONTEXT.md](CONTEXT.md), and the [skil
 
 Read the relevant `.agents/skills/<name>/SKILL.md` and its referenced supporting files before applying it. Use the task routing in [docs/skills.md](docs/skills.md); do not activate every skill at once.
 
-- UI implementation and polish: `emil-design-eng`; broader design work: `impeccable`.
+- UI implementation and interaction polish: `emil-design-eng`, following the project's designer's direction.
 - New motion: `animate`; existing motion review: `review-animations`; motion audits and opportunity searches: `improve-animations` or `find-animation-opportunities`.
 - Bugs: `diagnose`; behavior changes with test-first work: `tdd`; React verification: `react-doctor`.
 - Feature organization: `feature-folder-structure`; architectural investigation: `zoom-out` and `improve-codebase-architecture`.

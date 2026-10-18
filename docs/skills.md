@@ -1,6 +1,6 @@
 # Personal skill catalog
 
-This is a portable snapshot of the maintainer's personally installed skill collection, captured on 2026-10-18: **28 unique skills, 114 source and supporting files**. The collection includes upstream skills installed by the maintainer as well as locally added guidance. Original frontmatter, attribution, templates, scripts, and reference assets are preserved.
+This is a portable snapshot of the maintainer's selected personal skills for this repository, captured on 2026-10-18: **27 unique skills, 57 source and supporting files**. The collection includes upstream skills installed by the maintainer as well as locally added guidance. Original frontmatter, attribution, templates, scripts, and reference assets are preserved. Visual direction comes from the project's designer.
 
 Read [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md), and [CONTEXT.md](../CONTEXT.md) for how these workflows apply to Pillout.
 
@@ -8,7 +8,7 @@ Read [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md), and [CONT
 
 Pick the skill that matches the current task and read its `SKILL.md` before applying it. Follow links to the supporting references it requires. Skills are task-specific workflows, not a checklist to run in full for every change. A request to export or maintain the collection does not invoke every workflow it contains.
 
-The canonical files live under `.agents/skills/`. `.claude/skills` is a repository-relative symlink to that same collection, which also keeps the Impeccable examples' relative launcher paths usable. Other agents can read the files through this catalog or their repository-skill discovery support. If your checkout does not support symlinks, use the canonical `.agents/skills/` paths directly.
+The canonical files live under `.agents/skills/`. `.claude/skills` is a repository-relative symlink to that same collection. Other agents can read the files through this catalog or their repository-skill discovery support. If your checkout does not support symlinks, use the canonical `.agents/skills/` paths directly.
 
 Examples for a contributor or coding agent:
 
@@ -21,7 +21,6 @@ Project instructions and the user's request override generic examples in a skill
 ## Design and motion
 
 - **[emil-design-eng](../.agents/skills/emil-design-eng/SKILL.md):** Build and polish UI interactions, components, accessibility, and motion with the existing design language.
-- **[impeccable](../.agents/skills/impeccable/SKILL.md):** Design, critique, audit, refine, or adapt a frontend using its command-specific playbooks.
 - **[animate](../.agents/skills/animate/SKILL.md):** Implement a new animation or transition with a clear purpose and interruption behavior.
 - **[animation-vocabulary](../.agents/skills/animation-vocabulary/SKILL.md):** Find the precise name for a motion effect described in everyday language.
 - **[find-animation-opportunities](../.agents/skills/find-animation-opportunities/SKILL.md):** Identify worthwhile new motion opportunities; produces proposals without source edits.
@@ -62,7 +61,6 @@ Project instructions and the user's request override generic examples in a skill
 
 - Matt Pocock's engineering workflows require their setup step. Follow `setup-matt-pocock-skills` before the dependent workflows; it establishes `docs/agents/` and confirms tracker and domain conventions. `CONTEXT.md` provides the current Pillout vocabulary.
 - Imported `npm run` examples translate to `pnpm run`; installed command-line tools use `pnpm exec`; temporary tools use `pnpm dlx`. For example, the React Doctor command is `pnpm dlx react-doctor@latest . --verbose --diff` when that verification workflow is relevant.
-- Impeccable includes its launcher and reference assets. Its launcher uses a version-pinned platform binary and can download that binary on first use. Follow the skill's fallback if its required tooling is unavailable.
 - Sane requires the developer's own Sane MCP or CLI connection. It is an optional task-management workflow, not a dependency of the game.
 - Communication modes, interviews, prototypes, publishing to trackers, and integration-specific workflows retain the triggers and interaction requirements documented in their skills.
 

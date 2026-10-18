@@ -86,7 +86,7 @@ Run `pnpm run format` to format with Oxfmt, or `pnpm run format:check` for a rea
 
 ## Contributor playbook
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), and [CONTEXT.md](CONTEXT.md) before making changes. The maintainer's 28 personal skills are included in `.agents/skills/` with their supporting files. The [skill catalog](docs/skills.md) explains when to use each workflow and how to keep the snapshot up to date.
+Read [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), and [CONTEXT.md](CONTEXT.md) before making changes. The maintainer's 27 selected personal skills are included in `.agents/skills/` with their supporting files. Visual direction comes from the project's designer. The [skill catalog](docs/skills.md) explains when to use each workflow and how to keep the snapshot up to date.
 
 ## Deployment
 

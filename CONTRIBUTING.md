@@ -25,6 +25,7 @@ For example, use `diagnose` to investigate a reported bug, `animate` to add purp
 ## Implementation expectations
 
 - Design for a narrow touch screen first, then enhance the tablet and desktop layouts.
+- Follow the project's designer for visual direction and implement their supplied designs.
 - Keep React UI, Pixi presentation, Zustand session state, and pure rules separate.
 - Use shadcn Base UI primitives for shared controls and TanStack Router for navigation.
 - Keep the game playable with keyboard input. Respect system and in-app reduced-motion preferences.
