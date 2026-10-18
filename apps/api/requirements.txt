@@ -1,0 +1,16 @@
+# Direct dependencies from pyproject.toml (pip-friendly).
+# For a fully locked environment matching CI, use: uv sync --locked
+
+-e .
+
+# Runtime
+fastapi>=0.143.5
+libsql-client>=0.3.1
+pydantic>=2.14.1
+uvicorn>=0.54.0
+
+# Dev / test
+httpx2>=2.13.1
+mypy>=2.4.0
+pytest>=9.1.1
+ruff>=0.17.1
