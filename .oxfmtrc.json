@@ -5,5 +5,5 @@
   "trailingComma": "all",
   "printWidth": 100,
   "sortPackageJson": false,
-  "ignorePatterns": ["node_modules", "dist", "package-lock.json"]
+  "ignorePatterns": ["node_modules", "dist", "pnpm-lock.yaml"]
 }

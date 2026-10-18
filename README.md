@@ -6,22 +6,22 @@ A mobile-first match-three pill game. Swap colorful capsules, follow the cascade
 
 ## Run locally
 
-Requires Node.js 22.12 or newer and npm. No environment variables or external services are required.
+Requires Node.js 22.12 or newer and pnpm 10.28.1 (pinned in `package.json`). No environment variables or external services are required.
 
 ```sh
-npm ci
-npm run dev
+pnpm install --frozen-lockfile
+pnpm run dev
 ```
 
 Open http://localhost:5173. To check or build the project:
 
 ```sh
-npm test
-npm run lint
-npm run format:check
-npm run typecheck
-npm run build
-npm run preview
+pnpm test
+pnpm run lint
+pnpm run format:check
+pnpm run typecheck
+pnpm run build
+pnpm run preview
 ```
 
 ## Stack
@@ -73,19 +73,19 @@ Scores and preferences live on the current device. Active rounds are kept in mem
 `components.json` uses shadcn's `base-nova` style, backed by `@base-ui/react`. Add more components with:
 
 ```sh
-npx shadcn@latest add <component>
+pnpm dlx shadcn@latest add <component>
 ```
 
 Shared styles and class utilities are stored locally; the shadcn CLI is not a runtime dependency.
 
 ## Code quality
 
-Run `npm run lint` for Oxlint or `npm run lint:fix` to apply safe fixes. Its configuration is in `.oxlintrc.json`.
+Run `pnpm run lint` for Oxlint or `pnpm run lint:fix` to apply safe fixes. Its configuration is in `.oxlintrc.json`.
 
-Run `npm run format` to format with Oxfmt, or `npm run format:check` for a read-only check. `.oxfmtrc.json` keeps the project's single quotes, no semicolons, and 100-column formatting, and ignores generated output and the npm lockfile.
+Run `pnpm run format` to format with Oxfmt, or `pnpm run format:check` for a read-only check. `.oxfmtrc.json` keeps the project's single quotes, no semicolons, and 100-column formatting, and ignores generated output and the pnpm lockfile.
 
 ## Deployment
 
-`npm run build` writes a static site to `dist/`. Configure your host to serve `index.html` for unknown paths so direct navigation to `/how-to-play` works. The app currently assumes deployment at the domain root.
+`pnpm run build` writes a static site to `dist/`. Configure your host to serve `index.html` for unknown paths so direct navigation to `/how-to-play` works. The app currently assumes deployment at the domain root.
 
 Created in [T3 Code](https://t3.codes).
