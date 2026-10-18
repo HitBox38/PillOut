@@ -6,219 +6,171 @@ import {
   Outlet,
   RouterProvider,
 } from '@tanstack/react-router'
-import {
-  ArrowLeft,
-  ArrowRight,
-  AudioLines,
-  CircleHelp,
-  Leaf,
-  Settings2,
-  Volume2,
-  VolumeX,
-} from 'lucide-react'
+import { ArrowLeft, ChevronRight, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { Switch } from '@/components/ui/switch'
-import { useGameStore } from '@/game/store'
+import { Artwork, GameLogo } from '@/components/artwork'
+import { SPECIAL_ART } from '@/lib/art-assets'
+import PlayerSetup from '@/features/PlayerSetup'
 import { GamePage } from '@/pages/game-page'
 
-function Settings() {
-  const sound = useGameStore((s) => s.sound)
-  const reducedMotion = useGameStore((s) => s.reducedMotion)
-  return (
-    <Dialog>
-      <DialogTrigger render={<Button variant="ghost" size="icon" aria-label="Settings" />}>
-        <Settings2 size={19} />
-      </DialogTrigger>
-      <DialogContent className="settings-dialog">
-        <DialogHeader>
-          <DialogTitle>Make yourself comfortable.</DialogTitle>
-          <DialogDescription>A few little things to make Pillout yours.</DialogDescription>
-        </DialogHeader>
-        <label className="setting-row" htmlFor="sound-effects">
-          <span>
-            <strong>Sound effects</strong>
-            <small>Soft notes for every match.</small>
-          </span>
-          <Switch
-            id="sound-effects"
-            checked={sound}
-            onCheckedChange={useGameStore.getState().setSound}
-            aria-label="Sound effects"
-          />
-        </label>
-        <label className="setting-row" htmlFor="reduced-motion">
-          <span>
-            <strong>Reduce motion</strong>
-            <small>Keep things a little more still.</small>
-          </span>
-          <Switch
-            id="reduced-motion"
-            checked={reducedMotion}
-            onCheckedChange={useGameStore.getState().setReducedMotion}
-            aria-label="Reduce motion"
-          />
-        </label>
-        <p className="settings-note">Your preferences and best score are saved on this device.</p>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
 function Layout() {
-  const sound = useGameStore((s) => s.sound)
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
-        Skip to game
+        Skip to content
       </a>
-      <header className="site-header">
-        <Link to="/" className="brand" aria-label="Pillout home">
-          <span className="brand-symbol">
-            <span />
-          </span>
-          pillout
-        </Link>
-        <nav aria-label="Main navigation">
-          <Link to="/" activeOptions={{ exact: true }} activeProps={{ className: 'nav-active' }}>
-            Play
-          </Link>
-          <Link to="/how-to-play" activeProps={{ className: 'nav-active' }}>
-            How to play <CircleHelp size={14} />
-          </Link>
-        </nav>
-        <div className="header-actions">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={sound ? 'Mute sound' : 'Enable sound'}
-            onClick={() => useGameStore.getState().setSound(!sound)}
-          >
-            {sound ? <Volume2 size={19} /> : <VolumeX size={19} />}
-          </Button>
-          <span className="header-divider" />
-          <Settings />
-        </div>
-      </header>
       <main id="main-content">
         <Outlet />
       </main>
-      <footer className="site-footer">
-        <span>A little play goes a long way.</span>
-        <span>
-          <span className="footer-dot" /> MADE FOR YOUR DOWNTIME
-        </span>
-        <span>
-          Take it easy. <Leaf size={14} />
-        </span>
-      </footer>
     </div>
+  )
+}
+
+function Intro() {
+  return (
+    <section className="mobile-screen intro-screen" aria-label="Welcome to Pill Out">
+      <div className="intro-brand">
+        <GameLogo />
+        <p>Small matches. Big smiles.</p>
+      </div>
+      <div className="intro-bottom">
+        <Button nativeButton={false} render={<Link to="/welcome" />} className="candy-button">
+          Let’s play <ChevronRight />
+        </Button>
+        <Button
+          nativeButton={false}
+          render={<Link to="/play" />}
+          variant="link"
+          className="demo-link"
+        >
+          Try a quick game
+        </Button>
+        <img className="hospital-logo" src="/art/sheba-logo.png" alt="Sheba Tel HaShomer" />
+        <span className="made-with">
+          <Heart size={12} fill="currentColor" /> A little play goes a long way
+        </span>
+      </div>
+    </section>
   )
 }
 
 function HowToPlay() {
   return (
-    <div className="instructions-page">
-      <Link to="/" className="back-link">
-        <ArrowLeft size={16} /> Back to the good stuff
+    <section className="mobile-screen help-screen">
+      <Link to="/play" className="back-link">
+        <ArrowLeft /> Back to game
       </Link>
-      <span className="eyebrow">A MOMENT TO GET THE HANG OF IT</span>
-      <h1>
-        Little rules.
-        <br />
-        <span>Lovely results.</span>
-      </h1>
-      <p className="intro-copy">
-        A colorful little puzzle with a simple goal: make matches, find your rhythm, and enjoy the
-        moment.
-      </p>
-      <div className="instruction-grid">
-        <article>
-          <span className="step-number">01</span>
-          <div className="demo-match">
-            <span className="pill pill-coral" />
-            <span className="pill pill-coral" />
-            <span className="pill pill-coral" />
-          </div>
-          <h2>Meet your match.</h2>
+      <GameLogo />
+      <h1>Ready, set, match!</h1>
+      <ol>
+        <li>
+          <h2>Swap two neighbors</h2>
           <p>
-            Click a pill, then an adjacent pill to swap them. You can also swipe. Line up three or
-            more of the same color horizontally or vertically.
+            Tap two neighboring tiles, or swipe a tile. Match three or more of the same kind in a
+            row or column.
           </p>
-        </article>
-        <article>
-          <span className="step-number">02</span>
-          <div className="demo-icon">
-            <AudioLines size={46} strokeWidth={1.3} />
-          </div>
-          <h2>Let it flow.</h2>
+        </li>
+        <li>
+          <h2>Keep the matches coming</h2>
           <p>
-            Matched pills clear and new ones fall into place. Chain reactions multiply your points:
-            50 per pill, times the cascade number.
+            Every cleared or converted tile earns 50 points. Cascades multiply the points for that
+            move.
           </p>
-        </article>
-        <article>
-          <span className="step-number">03</span>
-          <div className="demo-icon">
-            <Leaf size={46} strokeWidth={1.3} />
-          </div>
-          <h2>Find your own pace.</h2>
+        </li>
+        <li>
+          <h2>Go for the goal</h2>
           <p>
-            Reach 2,000 points in 24 moves in Classic, or settle into Zen with no move limit. Hints
-            and shuffles are always free.
+            Reach 2,000 points in 24 moves in Classic. Switch to Zen in settings for unlimited
+            moves. Hints and shuffles are free.
           </p>
-        </article>
-      </div>
-      <div className="keyboard-note">
-        <strong>More of a keyboard person?</strong>
+        </li>
+      </ol>
+      <section className="special-instructions" aria-label="Special tiles">
+        <h2>Make an extra-special match</h2>
+        {Object.entries(SPECIAL_ART).map(([special, art]) => (
+          <article key={special}>
+            <Artwork source={art.source} crop={art.crop} />
+            <div>
+              <h3>{art.label}</h3>
+              <p>
+                {special === 'bomb'
+                  ? 'Match a T or L shape to earn a bomb. Swap it with a neighbor to clear a 3 × 3 area.'
+                  : special === 'hammer'
+                    ? 'Match four in a line to earn a hammer. Swap horizontally to clear a row, or vertically to clear a column.'
+                    : 'Match five in a line to earn a crown. Swap it with a regular object to clear every object of that type.'}
+              </p>
+            </div>
+          </article>
+        ))}
         <p>
-          Use arrow keys to explore the board, Enter or Space to select a pill, and Escape to clear
-          your selection.
+          Activating specials uses one move and can trigger others. Chained hammers use their
+          original match direction; chained crowns target the most common regular type. Swap two
+          crowns to clear the whole board. Shuffling keeps earned specials.
         </p>
-      </div>
-      <Button render={<Link to="/" />} className="primary-button">
-        Let’s play <ArrowRight size={16} />
+      </section>
+      <p className="plan-note">
+        Using a keyboard? Explore with arrow keys, select with Enter or Space, and clear your
+        selection with Escape.
+      </p>
+      <Button nativeButton={false} render={<Link to="/play" />} className="candy-button">
+        Let’s play <ChevronRight />
       </Button>
-    </div>
+    </section>
   )
 }
 
 const rootRoute = createRootRoute({
   component: Layout,
   notFoundComponent: () => (
-    <div className="instructions-page">
-      <h1>A little off track.</h1>
-      <Link to="/" className="back-link">
-        Back to the game <ArrowRight size={16} />
-      </Link>
-    </div>
+    <section className="mobile-screen help-screen">
+      <h1>Let’s get you back!</h1>
+      <Link to="/">Return to Pill Out</Link>
+    </section>
   ),
 })
-const gameRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: GamePage })
+const introRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: Intro })
+const welcomeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/welcome',
+  component: () => <PlayerSetup step="welcome" />,
+})
+const pillsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/pills',
+  component: () => <PlayerSetup step="pills" />,
+})
+const planRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/plan',
+  component: () => <PlayerSetup step="schedule" />,
+})
+const gameRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/play',
+  component: GamePage,
+})
 const instructionsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/how-to-play',
   component: HowToPlay,
 })
 const router = createRouter({
-  routeTree: rootRoute.addChildren([gameRoute, instructionsRoute]),
+  routeTree: rootRoute.addChildren([
+    introRoute,
+    welcomeRoute,
+    pillsRoute,
+    planRoute,
+    gameRoute,
+    instructionsRoute,
+  ]),
   defaultPreload: 'intent',
   scrollRestoration: true,
 })
-
 declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router
   }
 }
-
 export default function App() {
   return <RouterProvider router={router} />
 }

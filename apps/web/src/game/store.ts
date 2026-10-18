@@ -1,7 +1,18 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { adjacent, collapse, createBoard, findMatches, findMove, swap } from './engine'
-import type { Board, Move } from './engine'
+import {
+  adjacent,
+  collapse,
+  createBoard,
+  findMove,
+  resolveBoard,
+  swap,
+  shuffleBoard,
+  FRUIT_KINDS,
+} from './engine'
+import type { Board, Kind, Move } from './engine'
+import { MEDICINE_IDS } from './medicines'
+import type { MedicineId } from './medicines'
 import { playTone } from './audio'
 
 export const TARGET = 2000
@@ -12,6 +23,7 @@ type Outcome = 'playing' | 'won' | 'lost'
 
 interface GameState {
   board: Board
+  kinds: readonly Kind[]
   score: number
   best: number
   moves: number
@@ -31,6 +43,7 @@ interface GameState {
   select: (index: number) => void
   trySwap: (a: number, b: number) => Promise<void>
   newGame: (mode?: Mode) => void
+  setMedicines: (medicines: readonly MedicineId[]) => void
   showHint: () => void
   shuffle: () => void
   togglePause: () => void
@@ -44,6 +57,7 @@ export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
       board: createBoard(),
+      kinds: FRUIT_KINDS,
       score: 0,
       best: 0,
       moves: START_MOVES,
@@ -60,9 +74,19 @@ export const useGameStore = create<GameState>()(
       reducedMotion: false,
       message: 'A fresh board. A fresh start.',
       session: 0,
+      setMedicines: (medicines) => {
+        const kinds = [...FRUIT_KINDS, ...MEDICINE_IDS.filter((id) => medicines.includes(id))]
+        if (
+          kinds.length === get().kinds.length &&
+          kinds.every((kind, i) => get().kinds[i] === kind)
+        )
+          return
+        set({ kinds })
+        get().newGame()
+      },
       newGame: (mode = get().mode) =>
         set({
-          board: createBoard(),
+          board: createBoard(Math.random, get().kinds),
           score: 0,
           moves: START_MOVES,
           combo: 0,
@@ -110,8 +134,8 @@ export const useGameStore = create<GameState>()(
         set({ board, phase: 'swapping', selected: null, hint: null, combo: 0 })
         await wait(180)
         if (get().session !== session) return
-        let matches = findMatches(board)
-        if (!matches.length) {
+        let resolution = resolveBoard(board, [a, b])
+        if (!resolution.clearing.length) {
           set({ board: state.board, message: 'Almost! Try lining up three of one color.' })
           await wait(180)
           if (get().session === session) set({ phase: 'idle' })
@@ -119,30 +143,35 @@ export const useGameStore = create<GameState>()(
         }
         set({ moves: state.mode === 'zen' ? state.moves : state.moves - 1 })
         let combo = 0
-        while (matches.length) {
+        while (resolution.clearing.length) {
           combo++
-          const points = matches.length * 50 * combo
+          const points = (resolution.clearing.length + resolution.created.length) * 50 * combo
+          board = resolution.board
           const score = get().score + points
           set({
+            board,
             phase: 'clearing',
-            clearing: matches,
+            clearing: resolution.clearing,
             combo,
             score,
             best: Math.max(get().best, score),
-            cleared: get().cleared + matches.length,
-            message:
-              combo > 1
-                ? `${combo}× cascade! +${points} points. Keep that flow.`
-                : `Nice match! +${points} points.`,
+            cleared: get().cleared + resolution.clearing.length,
+            message: resolution.activated.length
+              ? `${[...new Set(resolution.activated)].map((special) => special[0]!.toUpperCase() + special.slice(1)).join(' + ')}! +${points} points.`
+              : resolution.created.length
+                ? `Special tile earned! +${points} points. Swap it with a neighbor!`
+                : combo > 1
+                  ? `${combo}× cascade! +${points} points. Keep that flow.`
+                  : `Nice match! +${points} points.`,
           })
           if (get().sound) playTone(combo)
           await wait(220)
           if (get().session !== session) return
-          board = collapse(board, matches)
+          board = collapse(board, resolution.clearing, Math.random, state.kinds)
           set({ board, clearing: [], phase: 'falling' })
           await wait(260)
           if (get().session !== session) return
-          matches = findMatches(board)
+          resolution = resolveBoard(board)
         }
         const outcome =
           get().mode === 'zen'
@@ -153,7 +182,7 @@ export const useGameStore = create<GameState>()(
                 ? 'lost'
                 : 'playing'
         if (outcome === 'playing' && !findMove(board)) {
-          board = createBoard()
+          board = shuffleBoard(board, Math.random, state.kinds)
           set({ message: 'A fresh mix to keep you moving. No moves used.' })
         }
         set({ board, phase: 'idle', outcome })
@@ -163,13 +192,13 @@ export const useGameStore = create<GameState>()(
         set({
           hint: findMove(get().board),
           selected: null,
-          message: 'A little nudge. Swap the two highlighted pills.',
+          message: 'A little nudge. Swap the two highlighted tiles.',
         })
       },
       shuffle: () => {
         if (get().phase !== 'idle' || get().paused || get().outcome !== 'playing') return
         set({
-          board: createBoard(),
+          board: shuffleBoard(get().board, Math.random, get().kinds),
           hint: null,
           selected: null,
           combo: 0,
