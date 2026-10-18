@@ -7,6 +7,7 @@ import { FRUIT_KINDS } from './engine'
 import * as engine from './engine'
 import { useGameStore } from './store'
 import { usePlayerSetup } from '../features/PlayerSetup/hooks/usePlayerSetup'
+import { useDailyRewards } from '../features/DailyRewards/hooks/useDailyRewards'
 
 const FIXTURE_KINDS = ['mercaptopurine', 'mint', 'gold', 'lavender', 'methotrexate'] as const
 
@@ -28,6 +29,7 @@ beforeEach(() => {
     return seed / 2 ** 32
   })
   usePlayerSetup.setState(usePlayerSetup.getInitialState(), true)
+  useDailyRewards.setState({ days: [], prizes: [] })
   useGameStore.setState({ progress: { level: 1, losses: 0 }, sound: false, reducedMotion: false })
   useGameStore.getState().setMedicines([])
   useGameStore.getState().newGame('classic')
@@ -154,6 +156,7 @@ describe('game session', () => {
     await pending
     expect(useGameStore.getState().moves).toBe(24)
     expect(useGameStore.getState().outcome).toBe('playing')
+    expect(useDailyRewards.getState().days).toEqual([])
   })
 
   it('ends a Classic game when the target is reached, including on the final move', async () => {
@@ -163,6 +166,8 @@ describe('game session', () => {
     await pending
     expect(useGameStore.getState().outcome).toBe('won')
     expect(useGameStore.getState().moves).toBe(0)
+    expect(useDailyRewards.getState().days).toHaveLength(1)
+    expect(useDailyRewards.getState().days[0]?.level).toBe(1)
   })
 
   it('ends a Classic game below the target after the final move', async () => {
@@ -177,10 +182,26 @@ describe('game session', () => {
     expect(useGameStore.getState().outcome).toBe('lost')
     expect(useGameStore.getState().moves).toBe(0)
     expect(useGameStore.getState().score).toBe(150)
+    expect(useDailyRewards.getState().days).toEqual([])
   })
 })
 
 describe('level progression', () => {
+  it('earns a daily reward once across multiple wins and restarts on the same day', async () => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      useGameStore.setState({ score: useGameStore.getState().level.target - 50, moves: 1 })
+      const pending = useGameStore.getState().trySwap(...findMove(useGameStore.getState().board)!)
+      await vi.runAllTimersAsync()
+      await pending
+      expect(useGameStore.getState().outcome).toBe('won')
+      useGameStore.getState().nextLevel()
+    }
+    expect(useDailyRewards.getState().days).toHaveLength(1)
+    expect(useDailyRewards.getState().days[0]?.level).toBe(1)
+    useGameStore.getState().newGame()
+    expect(useDailyRewards.getState().days).toHaveLength(1)
+  })
+
   it('unlocks the next level once after a real win, then starts its own goal and move budget', async () => {
     useGameStore.setState({ progress: { level: 4, losses: 4 } })
     useGameStore.getState().newGame()
