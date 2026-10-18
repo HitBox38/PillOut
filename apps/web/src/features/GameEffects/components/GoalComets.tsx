@@ -18,17 +18,6 @@ export default function GoalComets({ wave, reducedMotion }: Props) {
     if (!layer || !board || !goal || Date.now() - wave.startedAt > 1000) return
     const animations: Animation[] = []
     const elapsed = Date.now() - wave.startedAt
-    const pulse = goal.animate(
-      reducedMotion
-        ? [{ opacity: 0.65 }, { opacity: 1 }]
-        : [{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }],
-      {
-        duration: reducedMotion ? 180 : 250,
-        delay: Math.max(0, 480 - elapsed),
-        easing: EFFECT_EASE,
-      },
-    )
-    animations.push(pulse)
     if (!reducedMotion) {
       const bounds = layer.getBoundingClientRect()
       const source = board.getBoundingClientRect()

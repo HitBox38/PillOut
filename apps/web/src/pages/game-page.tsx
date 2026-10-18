@@ -29,6 +29,7 @@ import { AVATARS } from '@/features/PlayerSetup/constants'
 import { usePlayerSetup } from '@/features/PlayerSetup/hooks/usePlayerSetup'
 import GameEffects, {
   CascadeTitle,
+  ScoreCounter,
   VictoryCelebration,
   useReducedMotion,
 } from '@/features/GameEffects'
@@ -91,7 +92,7 @@ export function GamePage() {
           <h2>{mode === 'classic' ? 'Goal' : 'Score'}</h2>
           <div>
             <Trophy aria-hidden="true" />
-            <strong>{score.toLocaleString()}</strong>
+            <ScoreCounter key={session} score={score} />
             <span>
               {mode === 'classic' ? `/ ${level.target.toLocaleString()}` : 'keep your flow'}
             </span>
