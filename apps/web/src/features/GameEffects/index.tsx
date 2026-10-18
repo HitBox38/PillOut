@@ -3,6 +3,7 @@ import GoalComets from './components/GoalComets'
 import { useReducedMotion } from './hooks/useReducedMotion'
 
 export { default as CascadeTitle } from './components/CascadeTitle'
+export { default as ScoreCounter } from './components/ScoreCounter'
 export { default as VictoryCelebration } from './components/VictoryCelebration'
 export { useReducedMotion } from './hooks/useReducedMotion'
 

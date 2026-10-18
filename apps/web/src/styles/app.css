@@ -573,6 +573,38 @@ fieldset {
   font-size: clamp(10px, 1.5dvh, 12px);
   line-height: 1.15;
 }
+.goal-stat .score-readout {
+  position: relative;
+  line-height: 1;
+  isolation: isolate;
+}
+.goal-stat .score-value {
+  display: inline-block;
+  font: inherit;
+  line-height: inherit;
+}
+.goal-stat .score-gain {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 3px);
+  translate: -50% 0;
+  width: max-content;
+  max-width: 100px;
+  padding: 2px 7px;
+  border: 1px solid #fff2a1;
+  border-radius: 20px;
+  background: linear-gradient(#fff8bc, #ffda32);
+  color: #5a348d;
+  box-shadow: 0 2px 0 #c58413;
+  font-family: 'Fredoka', sans-serif;
+  font-size: clamp(12px, 1.8dvh, 16px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
 .moves-stat strong {
   font-family: 'Fredoka', sans-serif;
   font-size: clamp(36px, 6.6dvh, 60px);
