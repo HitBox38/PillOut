@@ -32,6 +32,7 @@ class UserCreate(BaseModel):
     last_name: str = Field(min_length=1, max_length=200)
     nickname: str | None = Field(default=None, max_length=100)
     avatar_filename: str | None = Field(default=None, max_length=500)
+    avatar_id: int | None = Field(default=None, ge=1)
 
 
 class UserUpdate(BaseModel):
@@ -40,6 +41,7 @@ class UserUpdate(BaseModel):
     last_name: str | None = Field(default=None, min_length=1, max_length=200)
     nickname: str | None = Field(default=None, max_length=100)
     avatar_filename: str | None = Field(default=None, max_length=500)
+    avatar_id: int | None = Field(default=None, ge=1)
 
 
 class UserIdRequest(BaseModel):
@@ -52,6 +54,7 @@ class UserResponse(BaseModel):
     last_name: str
     nickname: str | None
     avatar_filename: str | None
+    avatar_id: int | None
 
 
 class UsersListRequest(BaseModel):
@@ -83,6 +86,7 @@ class DrugResponse(BaseModel):
     name: str
     description: str
     asset_filename: str
+    catalog_key: str | None
 
 
 class DrugsListRequest(BaseModel):
@@ -134,6 +138,7 @@ class AvatarResponse(BaseModel):
     id: int
     name: str
     filename: str
+    catalog_key: str | None
 
 
 class AvatarsListRequest(BaseModel):
@@ -163,8 +168,9 @@ class UserAvatarsListRequest(BaseModel):
     avatar_id: int | None = Field(default=None, ge=1)
 
 
-USER_SELECT = "id, first_name, last_name, nickname, avatar_filename"
-AVATAR_SELECT = "id, name, filename"
+USER_SELECT = "id, first_name, last_name, nickname, avatar_filename, avatar_id"
+AVATAR_SELECT = "id, name, filename, catalog_key"
+DRUG_SELECT = "id, name, description, asset_filename, catalog_key"
 
 
 def _optional_text(value: object | None) -> str | None:
@@ -178,6 +184,7 @@ def _row_user(row: RowDict) -> UserResponse:
         last_name=str(row["last_name"]),
         nickname=_optional_text(row.get("nickname")),
         avatar_filename=_optional_text(row.get("avatar_filename")),
+        avatar_id=cell_int(row["avatar_id"]) if row.get("avatar_id") is not None else None,
     )
 
 
@@ -187,6 +194,7 @@ def _row_drug(row: RowDict) -> DrugResponse:
         name=str(row["name"]),
         description=str(row["description"]),
         asset_filename=str(row["asset_filename"]),
+        catalog_key=_optional_text(row.get("catalog_key")),
     )
 
 
@@ -203,6 +211,7 @@ def _row_avatar(row: RowDict) -> AvatarResponse:
         id=cell_int(row["id"]),
         name=str(row["name"]),
         filename=str(row["filename"]),
+        catalog_key=_optional_text(row.get("catalog_key")),
     )
 
 
@@ -227,7 +236,7 @@ async def _require_user(db: libsql_client.Client, user_id: int) -> UserResponse:
 
 async def _require_drug(db: libsql_client.Client, drug_id: int) -> DrugResponse:
     result = await db.execute(
-        "SELECT id, name, description, asset_filename FROM drugs WHERE id = ?",
+        f"SELECT {DRUG_SELECT} FROM drugs WHERE id = ?",
         [drug_id],
     )
     row = first_row(result)
@@ -284,9 +293,13 @@ def health() -> HealthResponse:
 
 @router.post("/user", response_model=UserResponse, tags=["users"])
 async def create_user(body: UserCreate, db: DbDep) -> UserResponse:
+    avatar_filename = body.avatar_filename
+    if body.avatar_id is not None:
+        avatar_filename = (await _require_avatar(db, body.avatar_id)).filename
     result = await db.execute(
-        "INSERT INTO users (first_name, last_name, nickname, avatar_filename) VALUES (?, ?, ?, ?)",
-        [body.first_name, body.last_name, body.nickname, body.avatar_filename],
+        "INSERT INTO users (first_name, last_name, nickname, avatar_filename, avatar_id) "
+        "VALUES (?, ?, ?, ?, ?)",
+        [body.first_name, body.last_name, body.nickname, avatar_filename, body.avatar_id],
     )
     user_id = _inserted_id(result)
     return await _require_user(db, user_id)
@@ -310,6 +323,7 @@ async def update_user(body: UserUpdate, db: DbDep) -> UserResponse:
         and body.last_name is None
         and body.nickname is None
         and body.avatar_filename is None
+        and "avatar_id" not in body.model_fields_set
     ):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -322,10 +336,19 @@ async def update_user(body: UserUpdate, db: DbDep) -> UserResponse:
     avatar_filename = (
         body.avatar_filename if body.avatar_filename is not None else existing.avatar_filename
     )
+    avatar_id = existing.avatar_id
+    if "avatar_id" in body.model_fields_set:
+        avatar_id = body.avatar_id
+        avatar_filename = (
+            (await _require_avatar(db, avatar_id)).filename if avatar_id is not None else None
+        )
+    elif body.avatar_filename is not None:
+        avatar_id = None
     await db.execute(
-        "UPDATE users SET first_name = ?, last_name = ?, nickname = ?, avatar_filename = ? "
+        "UPDATE users SET first_name = ?, last_name = ?, nickname = ?, avatar_filename = ?, "
+        "avatar_id = ? "
         "WHERE id = ?",
-        [first_name, last_name, nickname, avatar_filename, body.id],
+        [first_name, last_name, nickname, avatar_filename, avatar_id, body.id],
     )
     return await _require_user(db, body.id)
 
@@ -354,7 +377,7 @@ async def get_drug(body: DrugIdRequest, db: DbDep) -> DrugResponse:
 @router.post("/drugs", response_model=list[DrugResponse], tags=["drugs"])
 async def list_drugs(_body: DrugsListRequest, db: DbDep) -> list[DrugResponse]:
     result = await db.execute(
-        "SELECT id, name, description, asset_filename FROM drugs ORDER BY id",
+        f"SELECT {DRUG_SELECT} FROM drugs ORDER BY id",
     )
     return [_row_drug(row) for row in row_dicts(result)]
 

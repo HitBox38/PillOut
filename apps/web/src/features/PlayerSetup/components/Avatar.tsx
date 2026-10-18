@@ -1,7 +1,7 @@
 import { Artwork } from '@/components/artwork'
-import type { AVATARS } from '../constants'
+import type { AvatarOption } from '../types'
 
-export function Avatar({ avatar }: { avatar: (typeof AVATARS)[number] }) {
+export function Avatar({ avatar }: { avatar: AvatarOption }) {
   const [, , width, height] = avatar.crop
 
   return (

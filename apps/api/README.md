@@ -11,7 +11,7 @@ The API uses [Turso](https://turso.tech/) via `libsql-client`. Set:
 - `TURSO_DATABASE_URL` — libSQL URL from the Turso dashboard (optional; defaults to the shared Pillout Turso database when unset)
 - `TURSO_AUTH_TOKEN` — database auth token (required for remote URLs; may be empty for local `file:` URLs)
 
-On startup the app applies `schema.sql` (`CREATE TABLE IF NOT EXISTS` …).
+On startup the app applies `schema.sql`, adds missing catalog-key and selected-avatar columns to older databases, and inserts missing built-in medicines and avatars. Unique `catalog_key` values identify web sprite frames independently of numeric database IDs; existing rows and catalog edits are preserved. Custom catalog rows without a supported key remain available through the API but do not appear in the web pickers.
 
 Copy `.env.example` to `.env`, set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, then run `pnpm run dev` (uvicorn loads `.env` via `--env-file`). For local SQLite without Turso:
 
@@ -33,7 +33,9 @@ uv run --locked uvicorn pillout_api.main:app --reload --port 8000
 - Interactive API docs: http://localhost:8000/docs
 - OpenAPI schema: http://localhost:8000/openapi.json
 
-The frontend dev server proxies `/api` to this service. The game currently keeps its session in the browser and does not require the API to play.
+The frontend dev server proxies `/api` to this service. Setup loads catalogs through `POST /api/drugs` and `POST /api/avatars` with `{}` bodies. Welcome creates or updates a player through `POST /api/user` or `PATCH /api/user`, including the selected `avatar_id`, and reads it back through `POST /api/get_user`. A selected avatar is a single profile choice; `user_avatars` associations remain separate. Legacy filename-based user requests still work.
+
+Patient details, medicine selections, and schedules are not saved by the frontend yet. The current player ID stays in browser memory; refreshing starts new setup rather than recovering an account. These endpoints do not implement authentication. The quick game keeps its session in the browser and does not require the API to play.
 
 ## Checks
 

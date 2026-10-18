@@ -6,9 +6,11 @@ import Welcome from './components/Welcome'
 import PillSelection from './components/PillSelection'
 import Schedule from './components/Schedule'
 import { usePlayerSetup } from './hooks/usePlayerSetup'
+import { useSetupCatalogs } from './hooks/useSetupCatalogs'
 import type { Props } from './types'
 
 export default function PlayerSetup({ step }: Props) {
+  useSetupCatalogs()
   const navigate = useNavigate()
   const player = usePlayerSetup()
   const actualStep = step === 'schedule' && !player.selectedPills.length ? 'pills' : step

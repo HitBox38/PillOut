@@ -6,6 +6,8 @@ from pathlib import Path
 
 import libsql_client
 
+from pillout_api.catalog import seed_catalog
+
 API_ROOT = Path(__file__).resolve().parent.parent.parent
 SCHEMA_PATH = API_ROOT / "schema.sql"
 
@@ -66,3 +68,19 @@ async def init_schema(db: libsql_client.Client) -> None:
         if statement.upper().startswith("PRAGMA "):
             continue
         await db.execute(statement)
+
+    # CREATE TABLE IF NOT EXISTS does not upgrade databases created by earlier versions.
+    for table, column, definition in (
+        ("drugs", "catalog_key", "TEXT"),
+        ("avatars", "catalog_key", "TEXT"),
+        ("users", "avatar_id", "INTEGER REFERENCES avatars (id) ON DELETE SET NULL"),
+    ):
+        columns = row_dicts(await db.execute(f"PRAGMA table_info({table})"))
+        if not any(row["name"] == column for row in columns):
+            await db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+    for table in ("drugs", "avatars"):
+        await db.execute(
+            f"CREATE UNIQUE INDEX IF NOT EXISTS idx_{table}_catalog_key ON {table} (catalog_key)"
+        )
+    await seed_catalog(db)
