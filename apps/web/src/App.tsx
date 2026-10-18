@@ -3,7 +3,6 @@ import {
   createRoute,
   createRouter,
   Link,
-  Outlet,
   RouterProvider,
 } from '@tanstack/react-router'
 import { ArrowLeft, ChevronRight, Heart } from 'lucide-react'
@@ -11,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Artwork, GameLogo } from '@/components/artwork'
 import { SPECIAL_ART } from '@/lib/art-assets'
 import PlayerSetup from '@/features/PlayerSetup'
+import PageTransitions from '@/features/PageTransitions'
 import { GamePage } from '@/pages/game-page'
 
 function Layout() {
@@ -19,9 +19,7 @@ function Layout() {
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      <main id="main-content">
-        <Outlet />
-      </main>
+      <PageTransitions />
     </div>
   )
 }

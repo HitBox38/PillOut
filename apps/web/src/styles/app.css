@@ -1,3 +1,6 @@
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
 * {
   box-sizing: border-box;
 }
@@ -1576,7 +1579,7 @@ fieldset {
 
 /* Game juice: these scene beats extend beyond the short control transitions. */
 .game-screen {
-  --juice-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --juice-out: var(--ease-out);
   position: relative;
   isolation: isolate;
 }
