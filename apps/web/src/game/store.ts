@@ -13,12 +13,19 @@ import {
 import type { Board, Kind, Move } from './engine'
 import { MEDICINE_IDS } from './medicines'
 import type { MedicineId } from './medicines'
-import { playTone } from './audio'
+import { playGameSound, stopGameSounds } from './audio'
+import {
+  CLEAR_DURATION,
+  SHUFFLE_DURATION,
+  REDUCED_SHUFFLE_DURATION,
+  systemReducesMotion,
+} from './effects'
+import type { ClearWave, BoardRemix } from './effects'
 
 export const TARGET = 2000
 export const START_MOVES = 24
 export type Mode = 'classic' | 'zen'
-type Phase = 'idle' | 'swapping' | 'clearing' | 'falling'
+type Phase = 'idle' | 'swapping' | 'clearing' | 'falling' | 'shuffling'
 type Outcome = 'playing' | 'won' | 'lost'
 
 interface GameState {
@@ -40,18 +47,44 @@ interface GameState {
   reducedMotion: boolean
   message: string
   session: number
+  wave: ClearWave | null
+  remix: BoardRemix | null
   select: (index: number) => void
   trySwap: (a: number, b: number) => Promise<void>
   newGame: (mode?: Mode) => void
   setMedicines: (medicines: readonly MedicineId[]) => void
   showHint: () => void
-  shuffle: () => void
+  shuffle: () => Promise<void>
   togglePause: () => void
   setSound: (value: boolean) => void
   setReducedMotion: (value: boolean) => void
 }
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+let nextEffect = 0
+
+async function remixBoard(
+  set: (state: Partial<GameState>) => void,
+  get: () => GameState,
+  message: string,
+) {
+  const state = get()
+  set({
+    board: shuffleBoard(state.board, Math.random, state.kinds),
+    remix: { id: ++nextEffect, startedAt: Date.now(), previous: state.board },
+    phase: 'shuffling',
+    selected: null,
+    hint: null,
+    combo: 0,
+    wave: null,
+    message,
+  })
+  if (get().sound) playGameSound('shuffle')
+  await delay(
+    state.reducedMotion || systemReducesMotion() ? REDUCED_SHUFFLE_DURATION : SHUFFLE_DURATION,
+  )
+  if (get().session === state.session) set({ phase: 'idle', remix: null })
+}
 
 export const useGameStore = create<GameState>()(
   persist(
@@ -74,6 +107,8 @@ export const useGameStore = create<GameState>()(
       reducedMotion: false,
       message: 'A fresh board. A fresh start.',
       session: 0,
+      wave: null,
+      remix: null,
       setMedicines: (medicines) => {
         const kinds = [...FRUIT_KINDS, ...MEDICINE_IDS.filter((id) => medicines.includes(id))]
         if (
@@ -84,7 +119,8 @@ export const useGameStore = create<GameState>()(
         set({ kinds })
         get().newGame()
       },
-      newGame: (mode = get().mode) =>
+      newGame: (mode = get().mode) => {
+        stopGameSounds()
         set({
           board: createBoard(Math.random, get().kinds),
           score: 0,
@@ -103,7 +139,10 @@ export const useGameStore = create<GameState>()(
               ? 'No move limit. Just you and the colors.'
               : 'A fresh board. A fresh start.',
           session: get().session + 1,
-        }),
+          wave: null,
+          remix: null,
+        })
+      },
       select: (index) => {
         const state = get()
         if (
@@ -129,9 +168,9 @@ export const useGameStore = create<GameState>()(
         )
           return
         const session = state.session
-        const wait = (ms: number) => delay(get().reducedMotion ? 0 : ms)
+        const wait = (ms: number) => delay(get().reducedMotion || systemReducesMotion() ? 0 : ms)
         let board = swap(state.board, a, b)
-        set({ board, phase: 'swapping', selected: null, hint: null, combo: 0 })
+        set({ board, phase: 'swapping', selected: null, hint: null, combo: 0, wave: null })
         await wait(180)
         if (get().session !== session) return
         let resolution = resolveBoard(board, [a, b])
@@ -147,7 +186,8 @@ export const useGameStore = create<GameState>()(
           combo++
           const points = (resolution.clearing.length + resolution.created.length) * 50 * combo
           board = resolution.board
-          const score = get().score + points
+          const scoreBefore = get().score
+          const score = scoreBefore + points
           set({
             board,
             phase: 'clearing',
@@ -156,6 +196,17 @@ export const useGameStore = create<GameState>()(
             score,
             best: Math.max(get().best, score),
             cleared: get().cleared + resolution.clearing.length,
+            wave: {
+              id: ++nextEffect,
+              startedAt: Date.now(),
+              combo,
+              points,
+              scoreBefore,
+              scoreAfter: score,
+              clearing: resolution.clearing,
+              created: resolution.created,
+              activations: resolution.activations,
+            },
             message: resolution.activated.length
               ? `${[...new Set(resolution.activated)].map((special) => special[0]!.toUpperCase() + special.slice(1)).join(' + ')}! +${points} points.`
               : resolution.created.length
@@ -164,8 +215,12 @@ export const useGameStore = create<GameState>()(
                   ? `${combo}× cascade! +${points} points. Keep that flow.`
                   : `Nice match! +${points} points.`,
           })
-          if (get().sound) playTone(combo)
-          await wait(220)
+          if (get().sound)
+            playGameSound(
+              resolution.activated[0] ?? (resolution.created.length ? 'earned' : 'match'),
+              combo,
+            )
+          await wait(CLEAR_DURATION)
           if (get().session !== session) return
           board = collapse(board, resolution.clearing, Math.random, state.kinds)
           set({ board, clearing: [], phase: 'falling' })
@@ -182,10 +237,11 @@ export const useGameStore = create<GameState>()(
                 ? 'lost'
                 : 'playing'
         if (outcome === 'playing' && !findMove(board)) {
-          board = shuffleBoard(board, Math.random, state.kinds)
-          set({ message: 'A fresh mix to keep you moving. No moves used.' })
+          await remixBoard(set, get, 'A fresh mix to keep you moving. No moves used.')
+          return
         }
         set({ board, phase: 'idle', outcome })
+        if (outcome === 'won' && get().sound) playGameSound('win')
       },
       showHint: () => {
         if (get().phase !== 'idle' || get().paused || get().outcome !== 'playing') return
@@ -195,18 +251,15 @@ export const useGameStore = create<GameState>()(
           message: 'A little nudge. Swap the two highlighted tiles.',
         })
       },
-      shuffle: () => {
+      shuffle: async () => {
         if (get().phase !== 'idle' || get().paused || get().outcome !== 'playing') return
-        set({
-          board: shuffleBoard(get().board, Math.random, get().kinds),
-          hint: null,
-          selected: null,
-          combo: 0,
-          message: 'New mix, same good energy. No moves used.',
-        })
+        await remixBoard(set, get, 'New mix, same good energy. No moves used.')
       },
       togglePause: () => set((state) => ({ paused: !state.paused, selected: null })),
-      setSound: (sound) => set({ sound }),
+      setSound: (sound) => {
+        if (!sound) stopGameSounds()
+        set({ sound })
+      },
       setReducedMotion: (reducedMotion) => set({ reducedMotion }),
     }),
     {

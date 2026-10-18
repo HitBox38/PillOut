@@ -87,16 +87,30 @@ export function findMove(board: Board): Move | null {
   return null
 }
 
+export interface SpecialActivation {
+  index: number
+  special: Special
+  axis?: Axis
+  targets: number[]
+}
+
 export interface Resolution {
   board: Board
   clearing: number[]
   created: number[]
   activated: Special[]
+  activations: SpecialActivation[]
 }
 
 /** Resolve one wave on an already-swapped board, without gravity or random refills. */
 export function resolveBoard(board: Board, move?: Move): Resolution {
-  const result: Resolution = { board: [...board], clearing: [], created: [], activated: [] }
+  const result: Resolution = {
+    board: [...board],
+    clearing: [],
+    created: [],
+    activated: [],
+    activations: [],
+  }
   if (move && !adjacent(...move)) return result
   const runs = findRuns(board)
   const clearing = new Set(runs.flatMap((run) => run.indices))
@@ -176,17 +190,30 @@ export function resolveBoard(board: Board, move?: Move): Resolution {
     const tile = result.board[index]!
     const special = tile.special!
     result.activated.push(special)
+    const effect: SpecialActivation = {
+      index,
+      special,
+      axis: activation.axis ?? tile.axis,
+      targets: [index],
+    }
+    result.activations.push(effect)
+    const affect = (target: number) => {
+      if (protectedTiles.has(target)) return
+      if (!effect.targets.includes(target)) effect.targets.push(target)
+      add(target)
+    }
     const row = Math.floor(index / SIZE)
     const col = index % SIZE
     if (activation.wholeBoard) {
-      for (let cell = 0; cell < board.length; cell++) add(cell)
+      for (let cell = 0; cell < board.length; cell++) affect(cell)
     } else if (special === 'bomb') {
       for (let r = Math.max(0, row - 1); r <= Math.min(SIZE - 1, row + 1); r++)
-        for (let c = Math.max(0, col - 1); c <= Math.min(SIZE - 1, col + 1); c++) add(r * SIZE + c)
+        for (let c = Math.max(0, col - 1); c <= Math.min(SIZE - 1, col + 1); c++)
+          affect(r * SIZE + c)
     } else if (special === 'hammer') {
       const axis = activation.axis ?? tile.axis ?? 'row'
       for (let offset = 0; offset < SIZE; offset++)
-        add(axis === 'row' ? row * SIZE + offset : offset * SIZE + col)
+        affect(axis === 'row' ? row * SIZE + offset : offset * SIZE + col)
     } else {
       // A crown hit by another effect targets the most common regular type; ties use KINDS order.
       const counts = KINDS.map((kind) => ({
@@ -197,7 +224,7 @@ export function resolveBoard(board: Board, move?: Move): Resolution {
         activation.target ??
         counts.reduce((best, entry) => (entry.count > best.count ? entry : best)).kind
       result.board.forEach((cell, i) => {
-        if (!cell.special && cell.kind === target) add(i)
+        if (!cell.special && cell.kind === target) affect(i)
       })
     }
   }
