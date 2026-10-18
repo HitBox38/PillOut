@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Play, Trophy } from 'lucide-react'
 import { Avatar } from '@/features/PlayerSetup/components/Avatar'
@@ -15,15 +14,10 @@ interface Props {
 
 export default function VictoryCelebration({ score, avatar, onReplay }: Props) {
   const reduced = useReducedMotion()
-  const [skipped, setSkipped] = useState(false)
   return (
-    <div
-      className="board-overlay victory-overlay"
-      data-reduced={reduced || undefined}
-      data-skipped={skipped || undefined}
-    >
+    <div className="board-overlay victory-overlay" data-reduced={reduced || undefined}>
       <div className="victory-rays" aria-hidden="true" />
-      {!reduced && !skipped && (
+      {!reduced && (
         <div className="victory-confetti" aria-hidden="true">
           {CONFETTI.map((piece, index) => (
             <i
@@ -42,14 +36,6 @@ export default function VictoryCelebration({ score, avatar, onReplay }: Props) {
           ))}
         </div>
       )}
-      <Button
-        variant="ghost"
-        className="victory-skip"
-        onClick={() => setSkipped(true)}
-        aria-label="Finish celebration"
-      >
-        Skip
-      </Button>
       <div className="victory-emblem" aria-hidden="true">
         <Trophy className="victory-trophy" />
         <div className="victory-avatar">
