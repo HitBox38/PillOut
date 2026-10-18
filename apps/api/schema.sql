@@ -1,4 +1,4 @@
--- Pillout API SQLite schema
+-- Pillout API schema (libSQL / Turso)
 
 PRAGMA foreign_keys = ON;
 

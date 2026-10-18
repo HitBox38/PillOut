@@ -1,18 +1,22 @@
 """ASGI application entry point, independent of any hosting provider."""
 
-import os
-import sqlite3
-from collections.abc import AsyncIterator, Generator
-from contextlib import asynccontextmanager, contextmanager
-from pathlib import Path
-from typing import Literal
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, FastAPI, HTTPException, status
+import libsql_client
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
-API_ROOT = Path(__file__).resolve().parent.parent.parent
-SCHEMA_PATH = API_ROOT / "schema.sql"
-DEFAULT_DB_PATH = API_ROOT / "data" / "pillout.sqlite"
+from pillout_api.database import (
+    RowDict,
+    cell_int,
+    create_db_client,
+    first_row,
+    init_schema,
+    inserted_row_id,
+    row_dicts,
+)
 
 
 class HealthResponse(BaseModel):
@@ -159,139 +163,113 @@ class UserAvatarsListRequest(BaseModel):
     avatar_id: int | None = Field(default=None, ge=1)
 
 
-def _db_path() -> Path:
-    raw = os.environ.get("PILLOUT_DB_PATH")
-    return Path(raw) if raw else DEFAULT_DB_PATH
-
-
-def _inserted_id(cursor: sqlite3.Cursor) -> int:
-    if cursor.lastrowid is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Insert did not return a row id",
-        )
-    return int(cursor.lastrowid)
-
-
-def _migrate_users(conn: sqlite3.Connection) -> None:
-    columns = {str(row[1]) for row in conn.execute("PRAGMA table_info(users)")}
-    if "nickname" not in columns:
-        conn.execute("ALTER TABLE users ADD COLUMN nickname TEXT")
-    if "avatar_filename" not in columns:
-        conn.execute("ALTER TABLE users ADD COLUMN avatar_filename TEXT")
-
-
-def init_db(db_path: Path) -> None:
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    schema_sql = SCHEMA_PATH.read_text(encoding="utf-8")
-    with sqlite3.connect(db_path) as conn:
-        conn.executescript(schema_sql)
-        _migrate_users(conn)
-        conn.commit()
-
-
-@contextmanager
-def get_db() -> Generator[sqlite3.Connection, None, None]:
-    conn = sqlite3.connect(_db_path())
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    try:
-        yield conn
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
-
-
 USER_SELECT = "id, first_name, last_name, nickname, avatar_filename"
+AVATAR_SELECT = "id, name, filename"
 
 
 def _optional_text(value: object | None) -> str | None:
     return None if value is None else str(value)
 
 
-def _row_user(row: sqlite3.Row) -> UserResponse:
+def _row_user(row: RowDict) -> UserResponse:
     return UserResponse(
-        id=int(row["id"]),
+        id=cell_int(row["id"]),
         first_name=str(row["first_name"]),
         last_name=str(row["last_name"]),
-        nickname=_optional_text(row["nickname"]),
-        avatar_filename=_optional_text(row["avatar_filename"]),
+        nickname=_optional_text(row.get("nickname")),
+        avatar_filename=_optional_text(row.get("avatar_filename")),
     )
 
 
-def _row_drug(row: sqlite3.Row) -> DrugResponse:
+def _row_drug(row: RowDict) -> DrugResponse:
     return DrugResponse(
-        id=int(row["id"]),
+        id=cell_int(row["id"]),
         name=str(row["name"]),
         description=str(row["description"]),
         asset_filename=str(row["asset_filename"]),
     )
 
 
-def _row_user_drug(row: sqlite3.Row) -> UserDrugResponse:
+def _row_user_drug(row: RowDict) -> UserDrugResponse:
     return UserDrugResponse(
-        id=int(row["id"]),
-        user_id=int(row["user_id"]),
-        drug_id=int(row["drug_id"]),
+        id=cell_int(row["id"]),
+        user_id=cell_int(row["user_id"]),
+        drug_id=cell_int(row["drug_id"]),
     )
 
 
-AVATAR_SELECT = "id, name, filename"
-
-
-def _row_avatar(row: sqlite3.Row) -> AvatarResponse:
+def _row_avatar(row: RowDict) -> AvatarResponse:
     return AvatarResponse(
-        id=int(row["id"]),
+        id=cell_int(row["id"]),
         name=str(row["name"]),
         filename=str(row["filename"]),
     )
 
 
-def _row_user_avatar(row: sqlite3.Row) -> UserAvatarResponse:
+def _row_user_avatar(row: RowDict) -> UserAvatarResponse:
     return UserAvatarResponse(
-        id=int(row["id"]),
-        user_id=int(row["user_id"]),
-        avatar_id=int(row["avatar_id"]),
+        id=cell_int(row["id"]),
+        user_id=cell_int(row["user_id"]),
+        avatar_id=cell_int(row["avatar_id"]),
     )
 
 
-def _require_user(conn: sqlite3.Connection, user_id: int) -> UserResponse:
-    row = conn.execute(
+async def _require_user(db: libsql_client.Client, user_id: int) -> UserResponse:
+    result = await db.execute(
         f"SELECT {USER_SELECT} FROM users WHERE id = ?",
-        (user_id,),
-    ).fetchone()
+        [user_id],
+    )
+    row = first_row(result)
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return _row_user(row)
 
 
-def _require_drug(conn: sqlite3.Connection, drug_id: int) -> DrugResponse:
-    row = conn.execute(
+async def _require_drug(db: libsql_client.Client, drug_id: int) -> DrugResponse:
+    result = await db.execute(
         "SELECT id, name, description, asset_filename FROM drugs WHERE id = ?",
-        (drug_id,),
-    ).fetchone()
+        [drug_id],
+    )
+    row = first_row(result)
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Drug not found")
     return _row_drug(row)
 
 
-def _require_avatar(conn: sqlite3.Connection, avatar_id: int) -> AvatarResponse:
-    row = conn.execute(
+async def _require_avatar(db: libsql_client.Client, avatar_id: int) -> AvatarResponse:
+    result = await db.execute(
         f"SELECT {AVATAR_SELECT} FROM avatars WHERE id = ?",
-        (avatar_id,),
-    ).fetchone()
+        [avatar_id],
+    )
+    row = first_row(result)
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Avatar not found")
     return _row_avatar(row)
 
 
+def _inserted_id(result: libsql_client.ResultSet) -> int:
+    try:
+        return inserted_row_id(result)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Insert did not return a row id",
+        ) from None
+
+
+async def get_db(request: Request) -> libsql_client.Client:
+    return request.app.state.db
+
+
+DbDep = Annotated[libsql_client.Client, Depends(get_db)]
+
+
 @asynccontextmanager
-async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    init_db(_db_path())
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    app.state.db = create_db_client()
+    await init_schema(app.state.db)
     yield
+    await app.state.db.close()
 
 
 app = FastAPI(title="Pillout API", version="0.1.0", lifespan=lifespan)
@@ -305,32 +283,28 @@ def health() -> HealthResponse:
 
 
 @router.post("/user", response_model=UserResponse, tags=["users"])
-def create_user(body: UserCreate) -> UserResponse:
-    with get_db() as conn:
-        cursor = conn.execute(
-            "INSERT INTO users (first_name, last_name, nickname, avatar_filename) "
-            "VALUES (?, ?, ?, ?)",
-            (body.first_name, body.last_name, body.nickname, body.avatar_filename),
-        )
-        user_id = _inserted_id(cursor)
-        return _require_user(conn, user_id)
+async def create_user(body: UserCreate, db: DbDep) -> UserResponse:
+    result = await db.execute(
+        "INSERT INTO users (first_name, last_name, nickname, avatar_filename) VALUES (?, ?, ?, ?)",
+        [body.first_name, body.last_name, body.nickname, body.avatar_filename],
+    )
+    user_id = _inserted_id(result)
+    return await _require_user(db, user_id)
 
 
 @router.post("/get_user", response_model=UserResponse, tags=["users"])
-def get_user(body: UserIdRequest) -> UserResponse:
-    with get_db() as conn:
-        return _require_user(conn, body.id)
+async def get_user(body: UserIdRequest, db: DbDep) -> UserResponse:
+    return await _require_user(db, body.id)
 
 
 @router.post("/users", response_model=list[UserResponse], tags=["users"])
-def list_users(_body: UsersListRequest) -> list[UserResponse]:
-    with get_db() as conn:
-        rows = conn.execute(f"SELECT {USER_SELECT} FROM users ORDER BY id").fetchall()
-        return [_row_user(row) for row in rows]
+async def list_users(_body: UsersListRequest, db: DbDep) -> list[UserResponse]:
+    result = await db.execute(f"SELECT {USER_SELECT} FROM users ORDER BY id")
+    return [_row_user(row) for row in row_dicts(result)]
 
 
 @router.patch("/user", response_model=UserResponse, tags=["users"])
-def update_user(body: UserUpdate) -> UserResponse:
+async def update_user(body: UserUpdate, db: DbDep) -> UserResponse:
     if (
         body.first_name is None
         and body.last_name is None
@@ -341,258 +315,246 @@ def update_user(body: UserUpdate) -> UserResponse:
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="At least one user field must be provided",
         )
-    with get_db() as conn:
-        existing = _require_user(conn, body.id)
-        first_name = body.first_name if body.first_name is not None else existing.first_name
-        last_name = body.last_name if body.last_name is not None else existing.last_name
-        nickname = body.nickname if body.nickname is not None else existing.nickname
-        avatar_filename = (
-            body.avatar_filename if body.avatar_filename is not None else existing.avatar_filename
-        )
-        conn.execute(
-            "UPDATE users SET first_name = ?, last_name = ?, nickname = ?, avatar_filename = ? "
-            "WHERE id = ?",
-            (first_name, last_name, nickname, avatar_filename, body.id),
-        )
-        return _require_user(conn, body.id)
+    existing = await _require_user(db, body.id)
+    first_name = body.first_name if body.first_name is not None else existing.first_name
+    last_name = body.last_name if body.last_name is not None else existing.last_name
+    nickname = body.nickname if body.nickname is not None else existing.nickname
+    avatar_filename = (
+        body.avatar_filename if body.avatar_filename is not None else existing.avatar_filename
+    )
+    await db.execute(
+        "UPDATE users SET first_name = ?, last_name = ?, nickname = ?, avatar_filename = ? "
+        "WHERE id = ?",
+        [first_name, last_name, nickname, avatar_filename, body.id],
+    )
+    return await _require_user(db, body.id)
 
 
 @router.delete("/user", status_code=status.HTTP_204_NO_CONTENT, tags=["users"])
-def delete_user(body: UserIdRequest) -> None:
-    with get_db() as conn:
-        _require_user(conn, body.id)
-        conn.execute("DELETE FROM users WHERE id = ?", (body.id,))
+async def delete_user(body: UserIdRequest, db: DbDep) -> None:
+    await _require_user(db, body.id)
+    await db.execute("DELETE FROM users WHERE id = ?", [body.id])
 
 
 @router.post("/drug", response_model=DrugResponse, tags=["drugs"])
-def create_drug(body: DrugCreate) -> DrugResponse:
-    with get_db() as conn:
-        cursor = conn.execute(
-            "INSERT INTO drugs (name, description, asset_filename) VALUES (?, ?, ?)",
-            (body.name, body.description, body.asset_filename),
-        )
-        drug_id = _inserted_id(cursor)
-        return _require_drug(conn, drug_id)
+async def create_drug(body: DrugCreate, db: DbDep) -> DrugResponse:
+    result = await db.execute(
+        "INSERT INTO drugs (name, description, asset_filename) VALUES (?, ?, ?)",
+        [body.name, body.description, body.asset_filename],
+    )
+    drug_id = _inserted_id(result)
+    return await _require_drug(db, drug_id)
 
 
 @router.post("/get_drug", response_model=DrugResponse, tags=["drugs"])
-def get_drug(body: DrugIdRequest) -> DrugResponse:
-    with get_db() as conn:
-        return _require_drug(conn, body.id)
+async def get_drug(body: DrugIdRequest, db: DbDep) -> DrugResponse:
+    return await _require_drug(db, body.id)
 
 
 @router.post("/drugs", response_model=list[DrugResponse], tags=["drugs"])
-def list_drugs(_body: DrugsListRequest) -> list[DrugResponse]:
-    with get_db() as conn:
-        rows = conn.execute(
-            "SELECT id, name, description, asset_filename FROM drugs ORDER BY id",
-        ).fetchall()
-        return [_row_drug(row) for row in rows]
+async def list_drugs(_body: DrugsListRequest, db: DbDep) -> list[DrugResponse]:
+    result = await db.execute(
+        "SELECT id, name, description, asset_filename FROM drugs ORDER BY id",
+    )
+    return [_row_drug(row) for row in row_dicts(result)]
 
 
 @router.patch("/drug", response_model=DrugResponse, tags=["drugs"])
-def update_drug(body: DrugUpdate) -> DrugResponse:
+async def update_drug(body: DrugUpdate, db: DbDep) -> DrugResponse:
     if body.name is None and body.description is None and body.asset_filename is None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="At least one field must be provided to update",
         )
-    with get_db() as conn:
-        existing = _require_drug(conn, body.id)
-        name = body.name if body.name is not None else existing.name
-        description = body.description if body.description is not None else existing.description
-        asset_filename = (
-            body.asset_filename if body.asset_filename is not None else existing.asset_filename
-        )
-        conn.execute(
-            "UPDATE drugs SET name = ?, description = ?, asset_filename = ? WHERE id = ?",
-            (name, description, asset_filename, body.id),
-        )
-        return _require_drug(conn, body.id)
+    existing = await _require_drug(db, body.id)
+    name = body.name if body.name is not None else existing.name
+    description = body.description if body.description is not None else existing.description
+    asset_filename = (
+        body.asset_filename if body.asset_filename is not None else existing.asset_filename
+    )
+    await db.execute(
+        "UPDATE drugs SET name = ?, description = ?, asset_filename = ? WHERE id = ?",
+        [name, description, asset_filename, body.id],
+    )
+    return await _require_drug(db, body.id)
 
 
 @router.delete("/drug", status_code=status.HTTP_204_NO_CONTENT, tags=["drugs"])
-def delete_drug(body: DrugIdRequest) -> None:
-    with get_db() as conn:
-        _require_drug(conn, body.id)
-        conn.execute("DELETE FROM drugs WHERE id = ?", (body.id,))
+async def delete_drug(body: DrugIdRequest, db: DbDep) -> None:
+    await _require_drug(db, body.id)
+    await db.execute("DELETE FROM drugs WHERE id = ?", [body.id])
 
 
 @router.post("/user_drug", response_model=UserDrugResponse, tags=["user_drugs"])
-def create_user_drug(body: UserDrugCreate) -> UserDrugResponse:
-    with get_db() as conn:
-        _require_user(conn, body.user_id)
-        _require_drug(conn, body.drug_id)
-        conn.execute(
-            "INSERT OR IGNORE INTO user_drugs (user_id, drug_id) VALUES (?, ?)",
-            (body.user_id, body.drug_id),
+async def create_user_drug(body: UserDrugCreate, db: DbDep) -> UserDrugResponse:
+    await _require_user(db, body.user_id)
+    await _require_drug(db, body.drug_id)
+    await db.execute(
+        "INSERT OR IGNORE INTO user_drugs (user_id, drug_id) VALUES (?, ?)",
+        [body.user_id, body.drug_id],
+    )
+    result = await db.execute(
+        "SELECT id, user_id, drug_id FROM user_drugs WHERE user_id = ? AND drug_id = ?",
+        [body.user_id, body.drug_id],
+    )
+    row = first_row(result)
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to load user-drug link",
         )
-        row = conn.execute(
-            "SELECT id, user_id, drug_id FROM user_drugs WHERE user_id = ? AND drug_id = ?",
-            (body.user_id, body.drug_id),
-        ).fetchone()
-        assert row is not None
-        return _row_user_drug(row)
+    return _row_user_drug(row)
 
 
 @router.post("/get_user_drug", response_model=UserDrugResponse, tags=["user_drugs"])
-def get_user_drug(body: UserDrugIdRequest) -> UserDrugResponse:
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT id, user_id, drug_id FROM user_drugs WHERE id = ?",
-            (body.id,),
-        ).fetchone()
-        if row is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User-drug link not found",
-            )
-        return _row_user_drug(row)
+async def get_user_drug(body: UserDrugIdRequest, db: DbDep) -> UserDrugResponse:
+    result = await db.execute(
+        "SELECT id, user_id, drug_id FROM user_drugs WHERE id = ?",
+        [body.id],
+    )
+    row = first_row(result)
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User-drug link not found",
+        )
+    return _row_user_drug(row)
 
 
 @router.post("/user_drugs", response_model=list[UserDrugResponse], tags=["user_drugs"])
-def list_user_drugs(body: UserDrugsListRequest) -> list[UserDrugResponse]:
-    with get_db() as conn:
-        if body.user_id is not None:
-            rows = conn.execute(
-                "SELECT id, user_id, drug_id FROM user_drugs WHERE user_id = ? ORDER BY id",
-                (body.user_id,),
-            ).fetchall()
-        elif body.drug_id is not None:
-            rows = conn.execute(
-                "SELECT id, user_id, drug_id FROM user_drugs WHERE drug_id = ? ORDER BY id",
-                (body.drug_id,),
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT id, user_id, drug_id FROM user_drugs ORDER BY id",
-            ).fetchall()
-        return [_row_user_drug(row) for row in rows]
+async def list_user_drugs(body: UserDrugsListRequest, db: DbDep) -> list[UserDrugResponse]:
+    if body.user_id is not None:
+        result = await db.execute(
+            "SELECT id, user_id, drug_id FROM user_drugs WHERE user_id = ? ORDER BY id",
+            [body.user_id],
+        )
+    elif body.drug_id is not None:
+        result = await db.execute(
+            "SELECT id, user_id, drug_id FROM user_drugs WHERE drug_id = ? ORDER BY id",
+            [body.drug_id],
+        )
+    else:
+        result = await db.execute("SELECT id, user_id, drug_id FROM user_drugs ORDER BY id")
+    return [_row_user_drug(row) for row in row_dicts(result)]
 
 
 @router.delete("/user_drug", status_code=status.HTTP_204_NO_CONTENT, tags=["user_drugs"])
-def delete_user_drug(body: UserDrugIdRequest) -> None:
-    with get_db() as conn:
-        row = conn.execute("SELECT id FROM user_drugs WHERE id = ?", (body.id,)).fetchone()
-        if row is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User-drug link not found",
-            )
-        conn.execute("DELETE FROM user_drugs WHERE id = ?", (body.id,))
+async def delete_user_drug(body: UserDrugIdRequest, db: DbDep) -> None:
+    result = await db.execute("SELECT id FROM user_drugs WHERE id = ?", [body.id])
+    if first_row(result) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User-drug link not found",
+        )
+    await db.execute("DELETE FROM user_drugs WHERE id = ?", [body.id])
 
 
 @router.post("/avatar", response_model=AvatarResponse, tags=["avatars"])
-def create_avatar(body: AvatarCreate) -> AvatarResponse:
-    with get_db() as conn:
-        cursor = conn.execute(
-            "INSERT INTO avatars (name, filename) VALUES (?, ?)",
-            (body.name, body.filename),
-        )
-        avatar_id = _inserted_id(cursor)
-        return _require_avatar(conn, avatar_id)
+async def create_avatar(body: AvatarCreate, db: DbDep) -> AvatarResponse:
+    result = await db.execute(
+        "INSERT INTO avatars (name, filename) VALUES (?, ?)",
+        [body.name, body.filename],
+    )
+    avatar_id = _inserted_id(result)
+    return await _require_avatar(db, avatar_id)
 
 
 @router.post("/get_avatar", response_model=AvatarResponse, tags=["avatars"])
-def get_avatar(body: AvatarIdRequest) -> AvatarResponse:
-    with get_db() as conn:
-        return _require_avatar(conn, body.id)
+async def get_avatar(body: AvatarIdRequest, db: DbDep) -> AvatarResponse:
+    return await _require_avatar(db, body.id)
 
 
 @router.post("/avatars", response_model=list[AvatarResponse], tags=["avatars"])
-def list_avatars(_body: AvatarsListRequest) -> list[AvatarResponse]:
-    with get_db() as conn:
-        rows = conn.execute(f"SELECT {AVATAR_SELECT} FROM avatars ORDER BY id").fetchall()
-        return [_row_avatar(row) for row in rows]
+async def list_avatars(_body: AvatarsListRequest, db: DbDep) -> list[AvatarResponse]:
+    result = await db.execute(f"SELECT {AVATAR_SELECT} FROM avatars ORDER BY id")
+    return [_row_avatar(row) for row in row_dicts(result)]
 
 
 @router.patch("/avatar", response_model=AvatarResponse, tags=["avatars"])
-def update_avatar(body: AvatarUpdate) -> AvatarResponse:
+async def update_avatar(body: AvatarUpdate, db: DbDep) -> AvatarResponse:
     if body.name is None and body.filename is None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="At least one field must be provided to update",
         )
-    with get_db() as conn:
-        existing = _require_avatar(conn, body.id)
-        name = body.name if body.name is not None else existing.name
-        filename = body.filename if body.filename is not None else existing.filename
-        conn.execute(
-            "UPDATE avatars SET name = ?, filename = ? WHERE id = ?",
-            (name, filename, body.id),
-        )
-        return _require_avatar(conn, body.id)
+    existing = await _require_avatar(db, body.id)
+    name = body.name if body.name is not None else existing.name
+    filename = body.filename if body.filename is not None else existing.filename
+    await db.execute(
+        "UPDATE avatars SET name = ?, filename = ? WHERE id = ?",
+        [name, filename, body.id],
+    )
+    return await _require_avatar(db, body.id)
 
 
 @router.delete("/avatar", status_code=status.HTTP_204_NO_CONTENT, tags=["avatars"])
-def delete_avatar(body: AvatarIdRequest) -> None:
-    with get_db() as conn:
-        _require_avatar(conn, body.id)
-        conn.execute("DELETE FROM avatars WHERE id = ?", (body.id,))
+async def delete_avatar(body: AvatarIdRequest, db: DbDep) -> None:
+    await _require_avatar(db, body.id)
+    await db.execute("DELETE FROM avatars WHERE id = ?", [body.id])
 
 
 @router.post("/user_avatar", response_model=UserAvatarResponse, tags=["user_avatars"])
-def create_user_avatar(body: UserAvatarCreate) -> UserAvatarResponse:
-    with get_db() as conn:
-        _require_user(conn, body.user_id)
-        _require_avatar(conn, body.avatar_id)
-        conn.execute(
-            "INSERT OR IGNORE INTO user_avatars (user_id, avatar_id) VALUES (?, ?)",
-            (body.user_id, body.avatar_id),
+async def create_user_avatar(body: UserAvatarCreate, db: DbDep) -> UserAvatarResponse:
+    await _require_user(db, body.user_id)
+    await _require_avatar(db, body.avatar_id)
+    await db.execute(
+        "INSERT OR IGNORE INTO user_avatars (user_id, avatar_id) VALUES (?, ?)",
+        [body.user_id, body.avatar_id],
+    )
+    result = await db.execute(
+        "SELECT id, user_id, avatar_id FROM user_avatars WHERE user_id = ? AND avatar_id = ?",
+        [body.user_id, body.avatar_id],
+    )
+    row = first_row(result)
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to load user-avatar link",
         )
-        row = conn.execute(
-            "SELECT id, user_id, avatar_id FROM user_avatars WHERE user_id = ? AND avatar_id = ?",
-            (body.user_id, body.avatar_id),
-        ).fetchone()
-        assert row is not None
-        return _row_user_avatar(row)
+    return _row_user_avatar(row)
 
 
 @router.post("/get_user_avatar", response_model=UserAvatarResponse, tags=["user_avatars"])
-def get_user_avatar(body: UserAvatarIdRequest) -> UserAvatarResponse:
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT id, user_id, avatar_id FROM user_avatars WHERE id = ?",
-            (body.id,),
-        ).fetchone()
-        if row is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User-avatar link not found",
-            )
-        return _row_user_avatar(row)
+async def get_user_avatar(body: UserAvatarIdRequest, db: DbDep) -> UserAvatarResponse:
+    result = await db.execute(
+        "SELECT id, user_id, avatar_id FROM user_avatars WHERE id = ?",
+        [body.id],
+    )
+    row = first_row(result)
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User-avatar link not found",
+        )
+    return _row_user_avatar(row)
 
 
 @router.post("/user_avatars", response_model=list[UserAvatarResponse], tags=["user_avatars"])
-def list_user_avatars(body: UserAvatarsListRequest) -> list[UserAvatarResponse]:
-    with get_db() as conn:
-        if body.user_id is not None:
-            rows = conn.execute(
-                "SELECT id, user_id, avatar_id FROM user_avatars WHERE user_id = ? ORDER BY id",
-                (body.user_id,),
-            ).fetchall()
-        elif body.avatar_id is not None:
-            rows = conn.execute(
-                "SELECT id, user_id, avatar_id FROM user_avatars WHERE avatar_id = ? ORDER BY id",
-                (body.avatar_id,),
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT id, user_id, avatar_id FROM user_avatars ORDER BY id",
-            ).fetchall()
-        return [_row_user_avatar(row) for row in rows]
+async def list_user_avatars(body: UserAvatarsListRequest, db: DbDep) -> list[UserAvatarResponse]:
+    if body.user_id is not None:
+        result = await db.execute(
+            "SELECT id, user_id, avatar_id FROM user_avatars WHERE user_id = ? ORDER BY id",
+            [body.user_id],
+        )
+    elif body.avatar_id is not None:
+        result = await db.execute(
+            "SELECT id, user_id, avatar_id FROM user_avatars WHERE avatar_id = ? ORDER BY id",
+            [body.avatar_id],
+        )
+    else:
+        result = await db.execute("SELECT id, user_id, avatar_id FROM user_avatars ORDER BY id")
+    return [_row_user_avatar(row) for row in row_dicts(result)]
 
 
 @router.delete("/user_avatar", status_code=status.HTTP_204_NO_CONTENT, tags=["user_avatars"])
-def delete_user_avatar(body: UserAvatarIdRequest) -> None:
-    with get_db() as conn:
-        row = conn.execute("SELECT id FROM user_avatars WHERE id = ?", (body.id,)).fetchone()
-        if row is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User-avatar link not found",
-            )
-        conn.execute("DELETE FROM user_avatars WHERE id = ?", (body.id,))
+async def delete_user_avatar(body: UserAvatarIdRequest, db: DbDep) -> None:
+    result = await db.execute("SELECT id FROM user_avatars WHERE id = ?", [body.id])
+    if first_row(result) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User-avatar link not found",
+        )
+    await db.execute("DELETE FROM user_avatars WHERE id = ?", [body.id])
 
 
 app.include_router(router)
