@@ -63,7 +63,7 @@ a:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-heading);
   font-size: 26px;
   line-height: 1;
   font-weight: 700;
@@ -162,18 +162,20 @@ a:focus-visible {
   background: #91a17e;
 }
 h1 {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-heading);
   font-size: clamp(24px, 7.2vw, 31px);
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -1.5px;
   line-height: 1.2;
   margin: 13px 0 10px;
 }
 h2 {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-heading);
+  font-weight: 700;
 }
 h3 {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-heading);
+  font-weight: 700;
 }
 h1 > span {
   color: #8b967f;
@@ -193,7 +195,8 @@ h1 > span {
   transform: rotate(12deg);
 }
 .intro-flower span {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-heading);
+  font-weight: 700;
   font-size: 12px;
   line-height: 1.5;
   transform: rotate(-7deg);
@@ -237,7 +240,7 @@ h1 > span {
 }
 .session-panel h2 {
   font-size: 23px;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -1px;
   margin: 18px 0 4px;
   display: none;
@@ -279,9 +282,9 @@ h1 > span {
   line-height: 1.4;
 }
 .score-value {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-heading);
   font-size: 33px;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -2px;
   line-height: 1.2;
   display: flex;
@@ -339,9 +342,9 @@ h1 > span {
   margin-top: 6px;
 }
 .moves-section strong {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-heading);
   font-size: 30px;
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1;
   display: block;
   font-variant-numeric: tabular-nums;
@@ -576,7 +579,7 @@ h1 > span {
 .tips-panel h2 {
   font-size: 23px;
   line-height: 1.35;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -0.9px;
   margin: 17px 0 12px;
 }
@@ -632,7 +635,8 @@ h1 > span {
   background: linear-gradient(to right, #c4dfec 50%, #76acd4 50%);
 }
 .demo-plus {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-heading);
+  font-weight: 700;
   font-size: 11px;
   color: #819474;
   margin-left: auto;
@@ -764,7 +768,7 @@ h1 > span {
 }
 .board-overlay h2 {
   font-size: clamp(22px, 2.5vw, 31px);
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -1.2px;
   line-height: 1.25;
 }
@@ -788,7 +792,8 @@ h1 > span {
   padding: 27px !important;
 }
 .settings-dialog [data-slot='dialog-title'] {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-heading);
+  font-weight: 700;
   font-size: 20px;
   letter-spacing: -0.6px;
   line-height: 1.25;
@@ -862,13 +867,14 @@ h1 > span {
   background: #faf9f3;
 }
 .step-number {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-heading);
+  font-weight: 700;
   color: #aab19a;
   font-size: 12px;
 }
 .instruction-grid h2 {
   font-size: 21px;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -0.6px;
   margin-bottom: 12px;
 }
