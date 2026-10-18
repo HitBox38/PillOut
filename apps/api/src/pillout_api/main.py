@@ -2,13 +2,14 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 
-import libsql_client
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from .database import (
+    DatabaseClient,
+    ResultSet,
     RowDict,
     cell_int,
     create_db_client,
@@ -214,7 +215,7 @@ def _row_user_avatar(row: RowDict) -> UserAvatarResponse:
     )
 
 
-async def _require_user(db: libsql_client.Client, user_id: int) -> UserResponse:
+async def _require_user(db: DatabaseClient, user_id: int) -> UserResponse:
     result = await db.execute(
         f"SELECT {USER_SELECT} FROM users WHERE id = ?",
         [user_id],
@@ -225,7 +226,7 @@ async def _require_user(db: libsql_client.Client, user_id: int) -> UserResponse:
     return _row_user(row)
 
 
-async def _require_drug(db: libsql_client.Client, drug_id: int) -> DrugResponse:
+async def _require_drug(db: DatabaseClient, drug_id: int) -> DrugResponse:
     result = await db.execute(
         "SELECT id, name, description, asset_filename FROM drugs WHERE id = ?",
         [drug_id],
@@ -236,7 +237,7 @@ async def _require_drug(db: libsql_client.Client, drug_id: int) -> DrugResponse:
     return _row_drug(row)
 
 
-async def _require_avatar(db: libsql_client.Client, avatar_id: int) -> AvatarResponse:
+async def _require_avatar(db: DatabaseClient, avatar_id: int) -> AvatarResponse:
     result = await db.execute(
         f"SELECT {AVATAR_SELECT} FROM avatars WHERE id = ?",
         [avatar_id],
@@ -247,7 +248,7 @@ async def _require_avatar(db: libsql_client.Client, avatar_id: int) -> AvatarRes
     return _row_avatar(row)
 
 
-def _inserted_id(result: libsql_client.ResultSet) -> int:
+def _inserted_id(result: ResultSet) -> int:
     try:
         return inserted_row_id(result)
     except ValueError:
@@ -257,19 +258,21 @@ def _inserted_id(result: libsql_client.ResultSet) -> int:
         ) from None
 
 
-async def get_db(request: Request) -> libsql_client.Client:
-    return request.app.state.db
+async def get_db(request: Request) -> DatabaseClient:
+    return cast(DatabaseClient, request.app.state.db)
 
 
-DbDep = Annotated[libsql_client.Client, Depends(get_db)]
+DbDep = Annotated[DatabaseClient, Depends(get_db)]
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.db = create_db_client()
-    await init_schema(app.state.db)
-    yield
-    await app.state.db.close()
+    try:
+        await init_schema(app.state.db)
+        yield
+    finally:
+        await app.state.db.close()
 
 
 app = FastAPI(title="Pillout API", version="0.1.0", lifespan=lifespan)
