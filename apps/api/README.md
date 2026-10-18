@@ -4,6 +4,24 @@ A FastAPI service managed by uv. Python dependencies, its virtual environment, a
 
 Requires Python 3.12 or newer and uv 0.9.27 or newer. Local development and CI use Python 3.13, pinned in `.python-version`.
 
+## Database (Turso)
+
+The API uses [Turso](https://turso.tech/) via `libsql-client`. Set:
+
+- `TURSO_DATABASE_URL` — libSQL URL from the Turso dashboard (optional; defaults to the shared Pillout Turso database when unset)
+- `TURSO_AUTH_TOKEN` — database auth token (required for remote URLs; may be empty for local `file:` URLs)
+
+On startup the app applies `schema.sql` (`CREATE TABLE IF NOT EXISTS` …).
+
+Copy `.env.example` to `.env`, set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, then run `pnpm run dev` (uvicorn loads `.env` via `--env-file`). For local SQLite without Turso:
+
+```sh
+export TURSO_DATABASE_URL="file:./data/pillout.db"
+export TURSO_AUTH_TOKEN=""
+```
+
+On Vercel, add the same variables in the project environment settings.
+
 From this directory:
 
 ```sh
@@ -38,4 +56,4 @@ uv sync --locked --no-dev
 uv run --locked --no-dev uvicorn pillout_api.main:app --host 0.0.0.0 --port 8000
 ```
 
-Hosting, production routing, database, authentication, and shared game state will be decided separately. Keep provider-specific adapters outside the application package when they are introduced.
+The database client is configured in `pillout_api.database` from `TURSO_*` environment variables. Hosting, production routing, authentication, and shared game state remain deployment concerns outside this package.
