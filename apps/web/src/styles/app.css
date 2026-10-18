@@ -1277,17 +1277,19 @@ fieldset {
 .welcome-screen .avatar-grid {
   flex: 1;
   min-height: 0;
+  margin-inline: -8px;
   container-type: size;
   grid-template-columns: repeat(8, minmax(0, 1fr));
   grid-template-rows: repeat(2, auto);
   align-content: center;
-  gap: 6px;
-  padding: 6px 4px 2px;
+  gap: 6px 4px;
+  padding: 6px 0 2px;
 }
-.welcome-screen .avatar-card {
+.welcome-screen .avatar-card[data-slot='button'] {
   width: min(100%, calc((100cqh - 6px) / 2));
   min-width: 44px;
   min-height: 44px;
+  padding: 0;
   align-self: center;
   justify-self: center;
 }
