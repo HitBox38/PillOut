@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- The interactive ARIA grid uses rows and gridcells for keyboard navigation, not a data table. */
 import { useEffect, useRef, useState } from 'react'
 import { Application, Container, Graphics } from 'pixi.js'
 import { SIZE } from '@/game/engine'

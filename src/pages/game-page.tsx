@@ -170,9 +170,7 @@ export function GamePage() {
             <div className={paused ? 'board-blurred' : ''}>
               <Suspense
                 fallback={
-                  <div className="board-surface board-loading" role="status">
-                    Mixing your colors…
-                  </div>
+                  <output className="board-surface board-loading">Mixing your colors…</output>
                 }
               >
                 <GameBoard />
@@ -243,10 +241,10 @@ export function GamePage() {
               {paused ? 'Resume' : 'Pause'}
             </Button>
           </div>
-          <p className="game-message" role="status" aria-live="polite">
+          <output className="game-message" aria-live="polite">
             <Sparkles size={13} />
             {message}
-          </p>
+          </output>
         </div>
 
         <aside className="tips-panel">

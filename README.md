@@ -17,6 +17,8 @@ Open http://localhost:5173. To check or build the project:
 
 ```sh
 npm test
+npm run lint
+npm run format:check
 npm run typecheck
 npm run build
 npm run preview
@@ -24,13 +26,14 @@ npm run preview
 
 ## Stack
 
-- React 19 and TypeScript, built with Vite.
+- React 19 and TypeScript 7, built with Vite.
 - PixiJS 8 renders the board and capsule animations, loaded separately from the UI.
 - Zustand 5 owns the game session and persists preferences and the personal best locally.
 - shadcn/ui **Base UI** components: buttons, dialogs, switches, tabs, and progress.
 - TanStack Router provides typed navigation for `/` and `/how-to-play`.
 - Tailwind CSS 4, locally hosted fonts, and Lucide icons.
-- Vitest covers the game rules and asynchronous session behavior. GitHub Actions runs tests and the production build.
+- Oxlint checks TypeScript, React, accessibility, and test correctness. Oxfmt handles formatting.
+- Vitest covers the game rules and asynchronous session behavior. GitHub Actions runs lint, formatting checks, tests, and the production build.
 
 ## Structure
 
@@ -74,6 +77,12 @@ npx shadcn@latest add <component>
 ```
 
 Shared styles and class utilities are stored locally; the shadcn CLI is not a runtime dependency.
+
+## Code quality
+
+Run `npm run lint` for Oxlint or `npm run lint:fix` to apply safe fixes. Its configuration is in `.oxlintrc.json`.
+
+Run `npm run format` to format with Oxfmt, or `npm run format:check` for a read-only check. `.oxfmtrc.json` keeps the project's single quotes, no semicolons, and 100-column formatting, and ignores generated output and the npm lockfile.
 
 ## Deployment
 

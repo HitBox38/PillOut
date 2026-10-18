@@ -42,23 +42,25 @@ function Settings() {
           <DialogTitle>Make yourself comfortable.</DialogTitle>
           <DialogDescription>A few little things to make Pillout yours.</DialogDescription>
         </DialogHeader>
-        <label className="setting-row">
+        <label className="setting-row" htmlFor="sound-effects">
           <span>
             <strong>Sound effects</strong>
             <small>Soft notes for every match.</small>
           </span>
           <Switch
+            id="sound-effects"
             checked={sound}
             onCheckedChange={useGameStore.getState().setSound}
             aria-label="Sound effects"
           />
         </label>
-        <label className="setting-row">
+        <label className="setting-row" htmlFor="reduced-motion">
           <span>
             <strong>Reduce motion</strong>
             <small>Keep things a little more still.</small>
           </span>
           <Switch
+            id="reduced-motion"
             checked={reducedMotion}
             onCheckedChange={useGameStore.getState().setReducedMotion}
             aria-label="Reduce motion"

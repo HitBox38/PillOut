@@ -82,7 +82,7 @@ export function createBoard(random: Random = Math.random): Board {
 /** Stable gravity keeps surviving pills in their original vertical order. */
 export function collapse(board: Board, matched: number[], random: Random = Math.random): Board {
   const removed = new Set(matched)
-  const result: Board = new Array(SIZE * SIZE)
+  const result: Board = []
   for (let col = 0; col < SIZE; col++) {
     const survivors: Pill[] = []
     for (let row = 0; row < SIZE; row++) {

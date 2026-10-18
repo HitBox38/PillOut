@@ -66,7 +66,8 @@ describe('match-three rules', () => {
       board[40],
       board[56],
     ])
-    for (let i = 0; i < 64; i++) if (i % SIZE !== 0) expect(result[i]).toBe(board[i])
+    const unchangedIndices = Array.from({ length: 64 }, (_, i) => i).filter((i) => i % SIZE !== 0)
+    for (const i of unchangedIndices) expect(result[i]).toBe(board[i])
     expect(new Set(result.map((pill) => pill.id)).size).toBe(64)
     expect(board[16]!.id).toBe('test-16')
   })
