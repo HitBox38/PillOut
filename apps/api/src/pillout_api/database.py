@@ -11,6 +11,10 @@ SCHEMA_PATH = API_ROOT / "schema.sql"
 
 RowDict = dict[str, object]
 
+DEFAULT_TURSO_DATABASE_URL = (
+    "libsql://pillout-vercel-icfg-kk8uexgksl4uxxe5pqxwqvh7.aws-eu-west-1.turso.io"
+)
+
 
 def cell_int(value: object) -> int:
     if isinstance(value, int):
@@ -22,10 +26,7 @@ def cell_int(value: object) -> int:
 
 
 def turso_config() -> tuple[str, str]:
-    url = os.environ.get("TURSO_DATABASE_URL")
-    if not url:
-        msg = "TURSO_DATABASE_URL environment variable is required"
-        raise RuntimeError(msg)
+    url = os.environ.get("TURSO_DATABASE_URL") or DEFAULT_TURSO_DATABASE_URL
     token = os.environ.get("TURSO_AUTH_TOKEN", "")
     return url, token
 
