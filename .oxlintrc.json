@@ -12,7 +12,7 @@
     "builtin": true,
     "browser": true
   },
-  "ignorePatterns": ["dist/**"],
+  "ignorePatterns": ["dist/**", ".agents/skills/**", ".claude/skills/**"],
   "overrides": [
     {
       "files": ["vite.config.ts"],

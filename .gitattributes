@@ -1,0 +1,2 @@
+# Preserve imported skill sources, including their original whitespace.
+.agents/skills/** -whitespace

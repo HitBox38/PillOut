@@ -5,5 +5,11 @@
   "trailingComma": "all",
   "printWidth": 100,
   "sortPackageJson": false,
-  "ignorePatterns": ["node_modules", "dist", "pnpm-lock.yaml"]
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    "pnpm-lock.yaml",
+    ".agents/skills/**",
+    ".claude/skills/**"
+  ]
 }

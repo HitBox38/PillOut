@@ -84,6 +84,10 @@ Run `pnpm run lint` for Oxlint or `pnpm run lint:fix` to apply safe fixes. Its c
 
 Run `pnpm run format` to format with Oxfmt, or `pnpm run format:check` for a read-only check. `.oxfmtrc.json` keeps the project's single quotes, no semicolons, and 100-column formatting, and ignores generated output and the pnpm lockfile.
 
+## Contributor playbook
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), and [CONTEXT.md](CONTEXT.md) before making changes. The maintainer's 28 personal skills are included in `.agents/skills/` with their supporting files. The [skill catalog](docs/skills.md) explains when to use each workflow and how to keep the snapshot up to date.
+
 ## Deployment
 
 `pnpm run build` writes a static site to `dist/`. Configure your host to serve `index.html` for unknown paths so direct navigation to `/how-to-play` works. The app currently assumes deployment at the domain root.

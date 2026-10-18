@@ -1,0 +1,1110 @@
+{
+  "schemaVersion": 1,
+  "capturedOn": "2026-10-18",
+  "skills": [
+    {
+      "name": "animate",
+      "path": ".agents/skills/animate",
+      "description": "Build an animation from scratch, making the decisions in the order that determines whether it feels right \u2014 should it animate at all, what purpose, which tool, which properties, which curve and duration, how it interrupts, how it exits. Writes the implementation. Use when asked to animate something, add motion, make a component feel alive, or build a transition. For critiquing existing motion use review-animations; for auditing a whole codebase use improve-animations.",
+      "origins": ["~/.codex/skills/animate"],
+      "files": [
+        {
+          "path": "RECIPES.md",
+          "sha256": "21ff63d84391db8d96ecdf9170095f55a42c836ccc36fd3269c4772bab031ba2",
+          "bytes": 7957,
+          "executable": false
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "b8ede161270458e6ae2e45e8a1985373515d4c63de5568ddb0f9012d7634356c",
+          "bytes": 11860,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "animation-vocabulary",
+      "path": ".agents/skills/animation-vocabulary",
+      "description": "Reverse-lookup glossary that turns a vague description of a web animation or motion effect into its exact term (\"the bouncy thing when a popover opens\" \u2192 Pop in; \"the iOS rubber-band scroll\" \u2192 Rubber-banding). Use when the user asks \"what's it called when\u2026\", or describes a motion effect without knowing its name and wants the right word to prompt an AI or designer with. For naming an effect, not designing or building one.",
+      "origins": ["~/.codex/skills/animation-vocabulary"],
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "40d2b27adfdfeb0570a9f20e7d0255109d9233c50603878bcd0dcd04c923fd94",
+          "bytes": 13425,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "caveman",
+      "path": ".agents/skills/caveman",
+      "description": "Ultra-compressed communication mode. Cuts token usage ~75% by dropping filler, articles, and pleasantries while keeping full technical accuracy. Use when user says \"caveman mode\", \"talk like caveman\", \"use caveman\", \"less tokens\", \"be brief\", or invokes /caveman.",
+      "origins": [
+        "~/.agents/skills/caveman",
+        "~/.claude/skills/caveman",
+        "~/.cursor/skills/caveman",
+        "~/.opencode/skills/caveman"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/productivity/caveman/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "b4bb6fe3bf3da222993ca0aee5e7c6f5368b182dd30ce1172e8f8e3280eb7052",
+          "bytes": 1916,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "diagnose",
+      "path": ".agents/skills/diagnose",
+      "description": "Disciplined diagnosis loop for hard bugs and performance regressions. Reproduce \u2192 minimise \u2192 hypothesise \u2192 instrument \u2192 fix \u2192 regression-test. Use when user says \"diagnose this\" / \"debug this\", reports a bug, says something is broken/throwing/failing, or describes a performance regression.",
+      "origins": [
+        "~/.agents/skills/diagnose",
+        "~/.claude/skills/diagnose",
+        "~/.cursor/skills/diagnose",
+        "~/.opencode/skills/diagnose"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/engineering/diagnose/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "28886402bbfa0470248086eab9106a103b964b76ae9496e63ff0c8a6761b6d13",
+          "bytes": 7163,
+          "executable": false
+        },
+        {
+          "path": "scripts/hitl-loop.template.sh",
+          "sha256": "b2932630950e5210075bcd6f850e5accf30c101c5367b29eac3a29b4dd8084c8",
+          "bytes": 1164,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "emil-design-eng",
+      "path": ".agents/skills/emil-design-eng",
+      "description": "This skill encodes Emil Kowalski's philosophy on UI polish, component design, animation decisions, and the invisible details that make software feel great.",
+      "origins": ["~/.codex/skills/emil-design-eng"],
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "ffbe68e6007fb42cb8149f089b400a1ca007d59ba23e8948e2be4476f3175939",
+          "bytes": 27123,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "feature-folder-structure",
+      "path": ".agents/skills/feature-folder-structure",
+      "description": "Scaffolds React feature folders with index, types, constants, helpers, api, hooks, components, and tests. Use when creating a new feature, tab, widget, screen, or component folder, or when the user asks for folder structure or how to organize feature code.",
+      "origins": ["~/.cursor/skills/feature-folder-structure"],
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "8778b8fb05dd188c49b8f811e3ffc0f91f96c6cf917461ee63b01ab5c9598edb",
+          "bytes": 3519,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "find-animation-opportunities",
+      "path": ".agents/skills/find-animation-opportunities",
+      "description": "Search a codebase or UI for places that don't animate but should, and reject everything that shouldn't. Read-only; it proposes motion with exact values, it does not implement it. Use when the user asks \"what could be animated here?\" or wants to \"make this feel more alive\". For fixing existing animations, use improve-animations or review-animations instead.",
+      "origins": ["~/.codex/skills/find-animation-opportunities"],
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "d52a377819b84a71930f0c822cfe2849f40301605a2d5c7eccbfa3b257700df2",
+          "bytes": 9808,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "find-skills",
+      "path": ".agents/skills/find-skills",
+      "description": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill.",
+      "origins": ["~/.agents/skills/find-skills", "~/.cursor/skills/find-skills"],
+      "upstream": {
+        "source": "vercel-labs/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/vercel-labs/skills.git",
+        "skillPath": "skills/find-skills/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "54b44dc9539df865fbb060f62fb062e8232e765852a0cf14c38301fe0c1eb264",
+          "bytes": 4635,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "grill-me",
+      "path": ".agents/skills/grill-me",
+      "description": "Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Use when user wants to stress-test a plan, get grilled on their design, or mentions \"grill me\".",
+      "origins": [
+        "~/.agents/skills/grill-me",
+        "~/.claude/skills/grill-me",
+        "~/.cursor/skills/grill-me",
+        "~/.opencode/skills/grill-me"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/productivity/grill-me/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "74147eb6010a65957efef2b9e0f0b3ff935c1def7fc117697151b1d0f3610556",
+          "bytes": 635,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "grill-with-docs",
+      "path": ".agents/skills/grill-with-docs",
+      "description": "Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when user wants to stress-test a plan against their project's language and documented decisions.",
+      "origins": [
+        "~/.agents/skills/grill-with-docs",
+        "~/.claude/skills/grill-with-docs",
+        "~/.cursor/skills/grill-with-docs",
+        "~/.opencode/skills/grill-with-docs"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/engineering/grill-with-docs/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "ADR-FORMAT.md",
+          "sha256": "f1f36cd3f8d3b6474ddd5855da4e233bfc4ae1a1c5024909ccf11871819a41b2",
+          "bytes": 2766,
+          "executable": false
+        },
+        {
+          "path": "CONTEXT-FORMAT.md",
+          "sha256": "b8cc318f2a4285b530e908b6bc43901c3c5cd11100362636bbc4216639bef597",
+          "bytes": 2299,
+          "executable": false
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "3e35025119ba03efe7983dfdec3c8b96918142e3978512f3c2bf66d428310c7e",
+          "bytes": 3639,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "handoff",
+      "path": ".agents/skills/handoff",
+      "description": "Compact the current conversation into a handoff document for another agent to pick up.",
+      "origins": [
+        "~/.agents/skills/handoff",
+        "~/.claude/skills/handoff",
+        "~/.cursor/skills/handoff",
+        "~/.opencode/skills/handoff"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/productivity/handoff/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "d215dd8f2a19bf85fdaf67a3cdb5077641f6b4108f229ba79579414793d7b0a3",
+          "bytes": 847,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "impeccable",
+      "path": ".agents/skills/impeccable",
+      "description": "Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate, colorize, extract, or otherwise improve a frontend interface. Covers websites, landing pages, dashboards, product UI, app shells, components, forms, settings, onboarding, and empty states. Handles UX review, visual hierarchy, information architecture, cognitive load, accessibility, performance, responsive behavior, theming, anti-patterns, typography, fonts, spacing, layout, alignment, color, motion, micro-interactions, UX copy, error states, edge cases, i18n, and reusable design systems or tokens. Also use for bland designs that need to become bolder or more delightful, loud designs that should become quieter, live browser iteration on UI elements, or ambitious visual effects that should feel technically extraordinary. Not for backend-only or non-UI tasks.",
+      "origins": ["~/.claude/skills/impeccable"],
+      "version": "4.5.2",
+      "license": "Apache 2.0",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "35c883046117a416ca008ad7cbcda912c728a01f99b9a88130c2f0ab4c8d234c",
+          "bytes": 12510,
+          "executable": false
+        },
+        {
+          "path": "reference/adapt.md",
+          "sha256": "0648e4e06d01cabc91fa7dc19256ceedeeeea213b9265e9d36b0918370e16fb2",
+          "bytes": 11301,
+          "executable": false
+        },
+        {
+          "path": "reference/adapt.native.md",
+          "sha256": "17c583cf8ad41266ea1e787b666b9d91fe13469d3d0f6af57c08e0146f9b17ac",
+          "bytes": 3910,
+          "executable": false
+        },
+        {
+          "path": "reference/android.md",
+          "sha256": "058f81f256134841875fd3183e06b37a023de0c877fd2b9eecd97011640791fe",
+          "bytes": 4093,
+          "executable": false
+        },
+        {
+          "path": "reference/animate.md",
+          "sha256": "94b4ce6299fea93d9f256b2d25705961a76bc5ea940c56db4145686ebc99df1b",
+          "bytes": 5236,
+          "executable": false
+        },
+        {
+          "path": "reference/audit.md",
+          "sha256": "b7c98bde47e00889c235e3d808b596224aad5a0869f25e439f135ce86551a075",
+          "bytes": 8528,
+          "executable": false
+        },
+        {
+          "path": "reference/audit.native.md",
+          "sha256": "fe91fcf28638f95577af481a50edaf339d6c9a3ad3b9fa477bc81c116b8bc392",
+          "bytes": 8364,
+          "executable": false
+        },
+        {
+          "path": "reference/bolder.md",
+          "sha256": "4879f38b23d0a251a63cbb0327e660296194cd2e71eb4da3236c6ebfe5807746",
+          "bytes": 3471,
+          "executable": false
+        },
+        {
+          "path": "reference/clarify.md",
+          "sha256": "6c382f8283756e8a693d832b750f7e4cbff1ca5bdcc3825b2b4ef4da9f21876a",
+          "bytes": 4590,
+          "executable": false
+        },
+        {
+          "path": "reference/colorize.md",
+          "sha256": "d1fbd55074abb2251bdaa03749d34acc42c38e46e47549f18f5848df57d43c42",
+          "bytes": 4537,
+          "executable": false
+        },
+        {
+          "path": "reference/component-review.md",
+          "sha256": "6996198844d6459392b816e7bfb7d256f07b6884614e88069ffab5544b4886df",
+          "bytes": 8017,
+          "executable": false
+        },
+        {
+          "path": "reference/craft-floor.md",
+          "sha256": "96e2e6bd4fcf9a2c6da65fb029f96d9176308fae2efd9d8653d3b8d838960e07",
+          "bytes": 4484,
+          "executable": false
+        },
+        {
+          "path": "reference/craft.md",
+          "sha256": "9205e222bc6565b37fb504ceec93233c2d2a456802b69d16e6b1c44723907c4c",
+          "bytes": 555,
+          "executable": false
+        },
+        {
+          "path": "reference/critique.md",
+          "sha256": "c9284892cb1f21aaeaf93fdf2e9e7a679d05e0baa8ddf309a79a9790d262ad38",
+          "bytes": 42717,
+          "executable": false
+        },
+        {
+          "path": "reference/degraded/asset-producer.md",
+          "sha256": "a83cfd24bf58bc8997540577651a485f1eca38fd324106d8bedeab2394fb169e",
+          "bytes": 8429,
+          "executable": false
+        },
+        {
+          "path": "reference/degraded/documenter.md",
+          "sha256": "bcc05ea92faebb5c74037a9d4263a5ce9a56f5ab07c8ab3c59ee704d8cade745",
+          "bytes": 3325,
+          "executable": false
+        },
+        {
+          "path": "reference/degraded/finish-reviewer.md",
+          "sha256": "c40865450b53e0947bb4318e5e4a413d13e2ca0e8e26a8bea92aa043382d5910",
+          "bytes": 15834,
+          "executable": false
+        },
+        {
+          "path": "reference/degraded/manual-edit-applier.md",
+          "sha256": "5fae7f8a2fc3ddd49ad0a413446dc44daedef5b6b7de5eb935bd2fbfad646d58",
+          "bytes": 7196,
+          "executable": false
+        },
+        {
+          "path": "reference/delight.md",
+          "sha256": "56500b1f9d2fcec8324d7f448d813048b5831a46d3feeb1055bd3eb17ec3660f",
+          "bytes": 3716,
+          "executable": false
+        },
+        {
+          "path": "reference/distill.md",
+          "sha256": "b2f60e0154bf0e687badc46d8c8420e2118a9a6e21162050722be779dc02cb6d",
+          "bytes": 5624,
+          "executable": false
+        },
+        {
+          "path": "reference/doctor.md",
+          "sha256": "712a9a1cec93cc4d1bb4a4e9e47dd7c048973eebfa6f428f943386a7bc192f39",
+          "bytes": 5563,
+          "executable": false
+        },
+        {
+          "path": "reference/document.md",
+          "sha256": "87b3db688c7963898bda8096f7868fed05ec5a0a80d14298e8b906b70cdf9c42",
+          "bytes": 27428,
+          "executable": false
+        },
+        {
+          "path": "reference/extract.md",
+          "sha256": "bfc51972fbf387566dc9e29c8b1af479a66ab401fdbce659fae9e6a5a9d85316",
+          "bytes": 3340,
+          "executable": false
+        },
+        {
+          "path": "reference/generate.md",
+          "sha256": "fc149b5bc7a8d0cc9b9bf86e5013793f3857c1c302212e9aaf101cb95427386b",
+          "bytes": 13126,
+          "executable": false
+        },
+        {
+          "path": "reference/harden.md",
+          "sha256": "3898bd9b56a042e860a0db4fb4dd81ac81126fa218b604702e2ac0c2287ae09b",
+          "bytes": 9450,
+          "executable": false
+        },
+        {
+          "path": "reference/hooks.md",
+          "sha256": "3186f2c7fdf24c1fc9cc089850b62228fad79fde2908d3b6c900d9eda44b5185",
+          "bytes": 13911,
+          "executable": false
+        },
+        {
+          "path": "reference/init.md",
+          "sha256": "dc340befdfb87d1de3b70e860fab0be7e951a60d3ddc529072c39eb136cfcfcd",
+          "bytes": 11671,
+          "executable": false
+        },
+        {
+          "path": "reference/ios.md",
+          "sha256": "40c87038b5f75147a5952a96237acf312a327bf70c1bcd8e0a5f064625ae9668",
+          "bytes": 3812,
+          "executable": false
+        },
+        {
+          "path": "reference/layout.md",
+          "sha256": "64802d14087fc96b38ef3881fef8098b36068d07f3b942031637b18eef3dd2af",
+          "bytes": 5161,
+          "executable": false
+        },
+        {
+          "path": "reference/live-setup.md",
+          "sha256": "6e7e3b7c4cf331cdb43f4546c164acd6c45a267ce3289dcfa87e13202d98c747",
+          "bytes": 8186,
+          "executable": false
+        },
+        {
+          "path": "reference/live.md",
+          "sha256": "b4def5b57733b6ba233570bd5691a536901f8b15479fc0111a2cde56224d0e1a",
+          "bytes": 36245,
+          "executable": false
+        },
+        {
+          "path": "reference/mode-operate.md",
+          "sha256": "7a52dd7a94ee75f6ae89542c86a1b6e1d306812b16e0d9dbf12d4acad44d148b",
+          "bytes": 4716,
+          "executable": false
+        },
+        {
+          "path": "reference/mode-persuade.md",
+          "sha256": "21e78c8a77badb3f83290cd4577ed3b24bd4dd3b57136d7da75733d4f3ee9ac0",
+          "bytes": 3638,
+          "executable": false
+        },
+        {
+          "path": "reference/mode-read.md",
+          "sha256": "a569989e6a3d6453b4c45e9474e162a15cc54e11732ac6baa7990a6e7cccc0b5",
+          "bytes": 4396,
+          "executable": false
+        },
+        {
+          "path": "reference/new-work.md",
+          "sha256": "588ab4ab841a0aed0630420dcd7016b89554d51cb506cc804067527f57d1dd7e",
+          "bytes": 62199,
+          "executable": false
+        },
+        {
+          "path": "reference/onboard.md",
+          "sha256": "9a2c08ee2516d2ee87129e7ebe6a0895f9990c9852d1f6fa7e70be9a6a88a659",
+          "bytes": 7740,
+          "executable": false
+        },
+        {
+          "path": "reference/operate.md",
+          "sha256": "a9d2203acd45ca33a13d5c68b02b23ed512425ac15f0e8438318ed124b43729d",
+          "bytes": 4145,
+          "executable": false
+        },
+        {
+          "path": "reference/optimize.md",
+          "sha256": "6d368b679a0ed1815812815de65863b5840d419589dfbda06224c01149240287",
+          "bytes": 7614,
+          "executable": false
+        },
+        {
+          "path": "reference/overdrive.md",
+          "sha256": "a9856cb40da6519b1334bcfc75a4fbe83bef39ca86ee6f3effcb2a96794c627c",
+          "bytes": 9085,
+          "executable": false
+        },
+        {
+          "path": "reference/polish.md",
+          "sha256": "b8d49a3cab3428d9f351502e9c2c5802cef187e0d2af626ef3e1cd1837fd06bf",
+          "bytes": 6646,
+          "executable": false
+        },
+        {
+          "path": "reference/quieter.md",
+          "sha256": "ee6d6d127c1c2ab3526d529a8e3698be2185b5e346ac617f37501de2c0698b97",
+          "bytes": 4859,
+          "executable": false
+        },
+        {
+          "path": "reference/region-map.md",
+          "sha256": "4ea8e05d0f88d24f182ad554da84317f90b9730e29fad262143ddf423a1f8645",
+          "bytes": 3361,
+          "executable": false
+        },
+        {
+          "path": "reference/routing.md",
+          "sha256": "56285b28b0ffe471761c2ad062d3f933ed2346ca1b617f1323a30fed99a1a852",
+          "bytes": 3336,
+          "executable": false
+        },
+        {
+          "path": "reference/shape.md",
+          "sha256": "a55f016c046cb6a27c55bd7f346375aeb506a755c4fbca19a5f92dbd42309c23",
+          "bytes": 3547,
+          "executable": false
+        },
+        {
+          "path": "reference/typeset.md",
+          "sha256": "696c15f96d49a03091b71a408151a3297521f7a8231b98ca9b1103667a0b5f89",
+          "bytes": 5256,
+          "executable": false
+        },
+        {
+          "path": "reference/visualize.md",
+          "sha256": "edf294a9bb9911edf35bec8f294dd216fe57e1333ccb75f310c621e8aa133e72",
+          "bytes": 13918,
+          "executable": false
+        },
+        {
+          "path": "scripts/VERSION",
+          "sha256": "9940d4b5219de8404015bc18af844c88d7e9e9105682a5d47b1d369d027dbd25",
+          "bytes": 7,
+          "executable": false
+        },
+        {
+          "path": "scripts/command-metadata.json",
+          "sha256": "e8720f3aa41135211cc58cc299a39eeda86c75651f4279cc1ede8db10dcc0584",
+          "bytes": 8392,
+          "executable": false
+        },
+        {
+          "path": "scripts/data/font-index-failures.json",
+          "sha256": "835f19a0a3812f3652dd6979a2ce5597f654fd01f26e1b420b92d5f42b997ce4",
+          "bytes": 2437,
+          "executable": false
+        },
+        {
+          "path": "scripts/data/font-index.json",
+          "sha256": "47edbdfaf27073c47033d1ac7dfee881be49e2dcbda7671d1157300481dde6da",
+          "bytes": 1100013,
+          "executable": false
+        },
+        {
+          "path": "scripts/impeccable",
+          "sha256": "39d9600489073e227e4f4d55c451ce4252a6632ed7ae37923efbbcbc91f16d07",
+          "bytes": 8514,
+          "executable": true
+        },
+        {
+          "path": "scripts/impeccable.cmd",
+          "sha256": "69cad1ae7355825ef320ac9638a1c9675ba9fda01c9a0fa12244cc4a1973e550",
+          "bytes": 8498,
+          "executable": false
+        },
+        {
+          "path": "scripts/live-browser-dom.js",
+          "sha256": "24f09f2597b9b55a1e2c4acd2ae5c95db5c8615cfc20aa07d1a3950538ad5c4a",
+          "bytes": 10623,
+          "executable": false
+        },
+        {
+          "path": "scripts/live-browser-ignores.js",
+          "sha256": "c1cb6877ca99a0c1b38ba0c7d59f32702d3022f6821d8045f7133f7c40b6362f",
+          "bytes": 10346,
+          "executable": false
+        },
+        {
+          "path": "scripts/live-browser-session.js",
+          "sha256": "42831c3cd874346d8e7f120808d91e6ed3cda5c3eca6eefd76b126659536bc87",
+          "bytes": 4346,
+          "executable": false
+        },
+        {
+          "path": "scripts/live-browser.js",
+          "sha256": "d7f1ee3fdfc423e90268e9c666dce61b2180b62431dbb6ecfc48bca65398a1f8",
+          "bytes": 548448,
+          "executable": false
+        },
+        {
+          "path": "scripts/modern-screenshot.umd.js",
+          "sha256": "bb36665889124a0b6e15f16045265737449c3bdcf2712cdb08af3cfa01563e2b",
+          "bytes": 29290,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "improve-animations",
+      "path": ".agents/skills/improve-animations",
+      "description": "Survey a codebase's animation and motion code as a senior motion advisor, then produce a prioritized audit and self-contained implementation plans for other agents (or cheaper models) to execute. Read-only on source code \u2014 it plans improvements, it does not apply them. Use when the user asks to \"improve the animations\", \"audit the motion\", \"make this app feel better\", or wants a roadmap of animation fixes rather than a review of a single diff.",
+      "origins": ["~/.codex/skills/improve-animations"],
+      "files": [
+        {
+          "path": "AUDIT.md",
+          "sha256": "551c8473e20e5f4774680bc24d45e1c68e50992582720905c6b077756b7b5a55",
+          "bytes": 7387,
+          "executable": false
+        },
+        {
+          "path": "PLAN-TEMPLATE.md",
+          "sha256": "0a08ac8e23fd2082d7ffb86aeed7b789de77328c3cf874b16f1a755f2ef0a6ad",
+          "bytes": 3100,
+          "executable": false
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "73962447464433476343e2c12cd08ab39cc99a9e5f3c118c5fb54ed897574ef6",
+          "bytes": 8208,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "improve-codebase-architecture",
+      "path": ".agents/skills/improve-codebase-architecture",
+      "description": "Find deepening opportunities in a codebase, informed by the domain language in CONTEXT.md and the decisions in docs/adr/. Use when the user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, or make a codebase more testable and AI-navigable.",
+      "origins": [
+        "~/.agents/skills/improve-codebase-architecture",
+        "~/.claude/skills/improve-codebase-architecture",
+        "~/.cursor/skills/improve-codebase-architecture",
+        "~/.opencode/skills/improve-codebase-architecture"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "DEEPENING.md",
+          "sha256": "9577485f4fc32c0267639a9151bb41c8af0f8f6086e4bf8b84d5b236e30604e9",
+          "bytes": 2565,
+          "executable": false
+        },
+        {
+          "path": "HTML-REPORT.md",
+          "sha256": "8a8bcdbb578066271efe6ff675c831a6a4c4c7fd2081d6b5c9bc2e5fabc741d5",
+          "bytes": 6671,
+          "executable": false
+        },
+        {
+          "path": "INTERFACE-DESIGN.md",
+          "sha256": "678c3e34f1339015053212b3316bf0b676c70aa251050a0613667d4e755fb35e",
+          "bytes": 2725,
+          "executable": false
+        },
+        {
+          "path": "LANGUAGE.md",
+          "sha256": "6feca2140439c54a774749e8367f18350899ff69c777144ed2248cd4407949fa",
+          "bytes": 3804,
+          "executable": false
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "f00de04c7bb83cfd0ed1f97f3401a83838212c30856912ee44ba406649e6c749",
+          "bytes": 6518,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "prototype",
+      "path": ".agents/skills/prototype",
+      "description": "Build a throwaway prototype to flesh out a design before committing to it. Routes between two branches \u2014 a runnable terminal app for state/business-logic questions, or several radically different UI variations toggleable from one route. Use when the user wants to prototype, sanity-check a data model or state machine, mock up a UI, explore design options, or says \"prototype this\", \"let me play with it\", \"try a few designs\".",
+      "origins": [
+        "~/.agents/skills/prototype",
+        "~/.claude/skills/prototype",
+        "~/.cursor/skills/prototype",
+        "~/.opencode/skills/prototype"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/engineering/prototype/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "LOGIC.md",
+          "sha256": "da91dc92195c00d5dc33863b8c1a030998025a0f8583ebf2babd770825b7f70c",
+          "bytes": 5594,
+          "executable": false
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "a653deb65afa2ee8f45c68f6ef4f593147171b386e994c8cccf89292d9ea9d75",
+          "bytes": 3251,
+          "executable": false
+        },
+        {
+          "path": "UI.md",
+          "sha256": "d76d565149ee50456c5ddc5e29c27fec8737637874fe5c37d970db085a200b27",
+          "bytes": 6789,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "react-doctor",
+      "path": ".agents/skills/react-doctor",
+      "description": "Run after making React changes to catch issues early. Use when reviewing code, finishing a feature, or fixing bugs in a React project.",
+      "origins": ["~/.gemini/skills/react-doctor", "~/.cursor/skills/react-doctor"],
+      "version": "1.0.0",
+      "files": [
+        {
+          "path": "AGENTS.md",
+          "sha256": "70f8c93b7a9e762644f71334ab093ca82492fc4a6aaeeae22a24613baea371d6",
+          "bytes": 491,
+          "executable": false
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "199976e2edb53bd7da229b2a6215e4cf983628c9e5e6da17eee4798a846145b2",
+          "bytes": 546,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "request-refactor-plan",
+      "path": ".agents/skills/request-refactor-plan",
+      "description": "Create a detailed refactor plan with tiny commits via user interview, then file it as a GitHub issue. Use when user wants to plan a refactor, create a refactoring RFC, or break a refactor into safe incremental steps.",
+      "origins": [
+        "~/.agents/skills/request-refactor-plan",
+        "~/.claude/skills/request-refactor-plan",
+        "~/.cursor/skills/request-refactor-plan",
+        "~/.opencode/skills/request-refactor-plan"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/deprecated/request-refactor-plan/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "d59de4ba6cc1fe2dd267e8b9b5a1fd88e3e739e2130bc9dd78061d2a072830b8",
+          "bytes": 2711,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "review",
+      "path": ".agents/skills/review",
+      "description": "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes \u2014 Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/PRD asked for?). Runs both reviews in parallel sub-agents and reports them side by side. Use when the user wants to review a branch, a PR, work-in-progress changes, or asks to \"review since X\".",
+      "origins": [
+        "~/.agents/skills/review",
+        "~/.claude/skills/review",
+        "~/.cursor/skills/review",
+        "~/.opencode/skills/review"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/in-progress/review/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "5700f30d3f06706ee56c099adceec222fef26dbcf82817ff604962634e246b2e",
+          "bytes": 4426,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "review-animations",
+      "path": ".agents/skills/review-animations",
+      "description": "Reviews animation and motion code against a high craft bar derived from Emil Kowalski's design engineering philosophy. Default to flagging; approval is earned.",
+      "origins": ["~/.codex/skills/review-animations"],
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "6ff590d29e436766135aa3d137be1fac2a867165c7257fc315b189361f1873af",
+          "bytes": 8407,
+          "executable": false
+        },
+        {
+          "path": "STANDARDS.md",
+          "sha256": "e7d3605034acda54ca13e43aec9e64d65b53de20f75b11b8d694e373012fbe07",
+          "bytes": 9801,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "sane",
+      "path": ".agents/skills/sane",
+      "description": "Manage Sane tasks, projects, labels, comments, and members through the Sane MCP server or the sane command-line interface. Use when the user asks to inspect or change a Sane workspace.",
+      "origins": ["~/.codex/plugins/cache/personal/sane/0.1.0+codex.20260907072232/skills/sane"],
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "7a9351286d8de4cb3fa9917e2fc1f1caaafd2d81843ec1ebc7c3af44f59a75f6",
+          "bytes": 2045,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "setup-matt-pocock-skills",
+      "path": ".agents/skills/setup-matt-pocock-skills",
+      "description": "Sets up an `## Agent skills` block in AGENTS.md/CLAUDE.md and `docs/agents/` so the engineering skills know this repo's issue tracker (GitHub or local markdown), triage label vocabulary, and domain doc layout. Run before first use of `to-issues`, `to-prd`, `triage`, `diagnose`, `tdd`, `improve-codebase-architecture`, or `zoom-out` \u2014 or if those skills appear to be missing context about the issue tracker, triage labels, or domain docs.",
+      "origins": [
+        "~/.agents/skills/setup-matt-pocock-skills",
+        "~/.claude/skills/setup-matt-pocock-skills",
+        "~/.cursor/skills/setup-matt-pocock-skills",
+        "~/.opencode/skills/setup-matt-pocock-skills"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/engineering/setup-matt-pocock-skills/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "c778d4e3d86ecc9125c357279a86780657b5db23110e1f7acf4f46d2441e7204",
+          "bytes": 6861,
+          "executable": false
+        },
+        {
+          "path": "domain.md",
+          "sha256": "a8cc3d1c11c9cdea455f39c4090cf61ac273f2474dd6f229ab0c2b9b1deec759",
+          "bytes": 1986,
+          "executable": false
+        },
+        {
+          "path": "issue-tracker-github.md",
+          "sha256": "f0e138631d1fc8aedc9e05d25bc688b97679f81eae7a7c760dd35e0790568370",
+          "bytes": 1065,
+          "executable": false
+        },
+        {
+          "path": "issue-tracker-gitlab.md",
+          "sha256": "94c574647c4755f2a807742f5e78e7cef586c100266d54501d0e55445c1b1807",
+          "bytes": 1465,
+          "executable": false
+        },
+        {
+          "path": "issue-tracker-local.md",
+          "sha256": "9a052f4599525e581721ec24cb2ae3e0296b79053e39f684b540d34d3a4f6528",
+          "bytes": 838,
+          "executable": false
+        },
+        {
+          "path": "triage-labels.md",
+          "sha256": "4f53c9b40ce2651e3611aa090eaedbd6dbc9b71ef8c5f7e65eac0d8263190d0d",
+          "bytes": 1045,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "tdd",
+      "path": ".agents/skills/tdd",
+      "description": "Test-driven development with red-green-refactor loop. Use when user wants to build features or fix bugs using TDD, mentions \"red-green-refactor\", wants integration tests, or asks for test-first development.",
+      "origins": [
+        "~/.agents/skills/tdd",
+        "~/.claude/skills/tdd",
+        "~/.cursor/skills/tdd",
+        "~/.opencode/skills/tdd"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/engineering/tdd/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "af059705061156fd4845ddbb736fe92b564118ac5f03551e09ef9e8f6d970638",
+          "bytes": 4395,
+          "executable": false
+        },
+        {
+          "path": "deep-modules.md",
+          "sha256": "f2123700bf953db1740625686c75bdd145efd486357c47c6818c869fee657a32",
+          "bytes": 1239,
+          "executable": false
+        },
+        {
+          "path": "interface-design.md",
+          "sha256": "764c5ff0e3fa6b4ab7095eb65ccc7201e090baf19fa16051dfdb72c06d27417d",
+          "bytes": 653,
+          "executable": false
+        },
+        {
+          "path": "mocking.md",
+          "sha256": "3ceb807fdf4a47d6a93d4d9a891e5ba6d362a6247bd08adc451feebfc17361ef",
+          "bytes": 1481,
+          "executable": false
+        },
+        {
+          "path": "refactoring.md",
+          "sha256": "54fced22dd1911b7094c3fe7979b7c1a40d40be307482c4adf7dc0588f27d6cc",
+          "bytes": 387,
+          "executable": false
+        },
+        {
+          "path": "tests.md",
+          "sha256": "e12182f5c4c6a844b7c6ab4b8d2623b642aaaae5460fe58ed087efd4f3d5fb8a",
+          "bytes": 1640,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "teach",
+      "path": ".agents/skills/teach",
+      "description": "Teach the user a new skill or concept, within this workspace.",
+      "origins": [
+        "~/.agents/skills/teach",
+        "~/.claude/skills/teach",
+        "~/.cursor/skills/teach",
+        "~/.opencode/skills/teach"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/in-progress/teach/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "GLOSSARY-FORMAT.md",
+          "sha256": "d177def491519d97873291f2e860d8f1d60ead78feecb82eee022177958069c6",
+          "bytes": 2131,
+          "executable": false
+        },
+        {
+          "path": "LEARNING-RECORD-FORMAT.md",
+          "sha256": "855f81017625256584bbf62bd5edb9b0c86605c4cc1139c56acc36b802595d17",
+          "bytes": 2777,
+          "executable": false
+        },
+        {
+          "path": "MISSION-FORMAT.md",
+          "sha256": "8da6d3ac84eb2eb19f17c260b6acf01c560d3ac7a4501c415eea0e985602f4d7",
+          "bytes": 1553,
+          "executable": false
+        },
+        {
+          "path": "RESOURCES-FORMAT.md",
+          "sha256": "2bc634a64b0d0daa10904f9222e7aa0d361420dfacabbf092fbe3a72222edc08",
+          "bytes": 1926,
+          "executable": false
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "b55c93d761d4d1a70555e6caa86abe1a692892ebdacfda2e51d5ba8612decf31",
+          "bytes": 6003,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "to-issues",
+      "path": ".agents/skills/to-issues",
+      "description": "Break a plan, spec, or PRD into independently-grabbable issues on the project issue tracker using tracer-bullet vertical slices. Use when user wants to convert a plan into issues, create implementation tickets, or break down work into issues.",
+      "origins": [
+        "~/.agents/skills/to-issues",
+        "~/.claude/skills/to-issues",
+        "~/.cursor/skills/to-issues",
+        "~/.opencode/skills/to-issues"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/engineering/to-issues/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "0e6a2973fa5bdf32570227c578f7e474d945dd9281615d31439664c3ef016fce",
+          "bytes": 3576,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "to-prd",
+      "path": ".agents/skills/to-prd",
+      "description": "Turn the current conversation context into a PRD and publish it to the project issue tracker. Use when user wants to create a PRD from the current context.",
+      "origins": [
+        "~/.agents/skills/to-prd",
+        "~/.claude/skills/to-prd",
+        "~/.cursor/skills/to-prd",
+        "~/.opencode/skills/to-prd"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/engineering/to-prd/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "5212dee3af6a95e60d7daaedac08f15f2789b170468d57d23f722e516a255269",
+          "bytes": 2925,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "triage",
+      "path": ".agents/skills/triage",
+      "description": "Triage issues through a state machine driven by triage roles. Use when user wants to create an issue, triage issues, review incoming bugs or feature requests, prepare issues for an AFK agent, or manage issue workflow.",
+      "origins": [
+        "~/.agents/skills/triage",
+        "~/.claude/skills/triage",
+        "~/.cursor/skills/triage",
+        "~/.opencode/skills/triage"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/engineering/triage/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "AGENT-BRIEF.md",
+          "sha256": "1c71c747aa97d938f75ec7a4b8fe87451763b38a3ce6348acf2b222e5819b2e5",
+          "bytes": 6243,
+          "executable": false
+        },
+        {
+          "path": "OUT-OF-SCOPE.md",
+          "sha256": "8ed8cf27833444060c81b3961a83c0e3d8e6cf2fcb2ddf6f8b07c6655cbb0d85",
+          "bytes": 4282,
+          "executable": false
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "b819f0285e4e5814ac6472d0217f07dc9f23d2fdae3ebb0dd31d98360d8ac029",
+          "bytes": 4883,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "write-a-skill",
+      "path": ".agents/skills/write-a-skill",
+      "description": "Create new agent skills with proper structure, progressive disclosure, and bundled resources. Use when user wants to create, write, or build a new skill.",
+      "origins": [
+        "~/.agents/skills/write-a-skill",
+        "~/.claude/skills/write-a-skill",
+        "~/.cursor/skills/write-a-skill",
+        "~/.opencode/skills/write-a-skill"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/productivity/write-a-skill/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "be8f20e66309258034b82a7db5040b03798aa40546f9d387662c2bd86be23123",
+          "bytes": 3056,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "zoom-out",
+      "path": ".agents/skills/zoom-out",
+      "description": "Tell the agent to zoom out and give broader context or a higher-level perspective. Use when you're unfamiliar with a section of code or need to understand how it fits into the bigger picture.",
+      "origins": [
+        "~/.agents/skills/zoom-out",
+        "~/.claude/skills/zoom-out",
+        "~/.cursor/skills/zoom-out",
+        "~/.opencode/skills/zoom-out"
+      ],
+      "upstream": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git",
+        "skillPath": "skills/engineering/zoom-out/SKILL.md"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "2a6894c7f9b1c9c55f451c625a834c4f377e217b623a85280e55db5fe9cacf48",
+          "bytes": 430,
+          "executable": false
+        }
+      ]
+    }
+  ]
+}
