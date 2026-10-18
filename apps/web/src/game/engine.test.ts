@@ -261,3 +261,31 @@ it('activates a chained crown against the most common regular type, with determi
   expect(result.clearing).not.toContain(0)
   expect(result.clearing).toHaveLength(20)
 })
+
+it('describes each chained special’s real origin, direction, and protected targets', () => {
+  const board = cleanBoard()
+  board[26] = { ...board[26]!, special: 'bomb' }
+  board[28] = { ...board[28]!, special: 'hammer', axis: 'column' }
+  const result = resolveBoard(swap(board, 26, 27), [26, 27])
+  expect(result.activations[0]).toMatchObject({ index: 27, special: 'bomb' })
+  expect(new Set(result.activations[0]!.targets)).toEqual(
+    new Set([18, 19, 20, 26, 27, 28, 34, 35, 36]),
+  )
+  expect(result.activations[1]).toMatchObject({ index: 28, special: 'hammer', axis: 'column' })
+  expect(new Set(result.activations[1]!.targets)).toEqual(new Set([4, 12, 20, 28, 36, 44, 52, 60]))
+  expect(
+    result.activations
+      .flatMap((effect) => effect.targets)
+      .every((index) => result.clearing.includes(index)),
+  ).toBe(true)
+})
+
+it('does not include a newly earned special in a simultaneous blast’s visual targets', () => {
+  const board = cleanBoard()
+  for (const index of [17, 18, 19, 20]) board[index] = { ...board[index]!, kind: 'mercaptopurine' }
+  board[26] = { ...board[26]!, special: 'bomb' }
+  const result = resolveBoard(swap(board, 26, 27), [26, 27])
+  expect(result.created).toEqual([19])
+  expect(result.clearing).not.toContain(19)
+  expect(result.activations[0]!.targets).not.toContain(19)
+})

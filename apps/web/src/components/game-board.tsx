@@ -6,11 +6,9 @@ import type { Pill } from '@/game/engine'
 import { useGameStore } from '@/game/store'
 import { Artwork } from '@/components/artwork'
 import { ART_SOURCES, TILE_ART, SPECIAL_ART, getTileArt } from '@/lib/art-assets'
-import type { Kind, Special } from '@/game/engine'
-
-const CELL = 64
-const WIDTH = CELL * SIZE
-type TileTextures = Record<Kind | Special, Texture>
+import { systemReducesMotion, BIRTH_DURATION } from '@/game/effects'
+import { BoardEffects, CELL, BOARD_WIDTH as WIDTH, easeOut } from './game-board-effects'
+import type { TileTextures } from './game-board-effects'
 
 function makePill(pill: Pill, textures: TileTextures) {
   const view = new Container()
@@ -48,9 +46,21 @@ export function GameBoard() {
     const app = new Application()
     let disposed = false
     let unsubscribe = () => {}
+    const effects = new BoardEffects()
+    let session = useGameStore.getState().session
+    let lastWave = -1
+    let lastRemix = -1
+    let lastReduced = false
     const nodes = new Map<
       string,
-      ReturnType<typeof makePill> & { targetX: number; targetY: number; clearing: boolean }
+      ReturnType<typeof makePill> & {
+        targetX: number
+        targetY: number
+        clearing: boolean
+        index: number
+        special: boolean
+        bornAt: number | null
+      }
     >()
     async function init() {
       try {
@@ -100,9 +110,18 @@ export function GameBoard() {
           }
         }
         app.stage.addChild(grid)
+        app.stage.addChild(effects.layer)
         const sync = () => {
           const state = useGameStore.getState()
+          const reduce = state.reducedMotion || systemReducesMotion()
+          if (session !== state.session) {
+            effects.clear()
+            session = state.session
+          }
           const ids = new Set(state.board.map((pill) => pill.id))
+          const clearing = new Set(state.clearing)
+          const created = new Set(state.wave?.created)
+          const hinted = new Set(state.hint ?? [])
           for (const [id, node] of nodes) {
             if (!ids.has(id)) {
               node.view.destroy({ children: true })
@@ -114,12 +133,21 @@ export function GameBoard() {
             const y = Math.floor(index / SIZE) * CELL + CELL / 2
             let node = nodes.get(pill.id)
             if (!node) {
-              node = { ...makePill(pill, textures), targetX: x, targetY: y, clearing: false }
+              node = {
+                ...makePill(pill, textures),
+                targetX: x,
+                targetY: y,
+                clearing: false,
+                index,
+                special: Boolean(pill.special),
+                bornAt:
+                  state.phase === 'clearing' && created.has(index)
+                    ? (state.wave?.startedAt ?? null)
+                    : null,
+              }
               node.view.position.set(
                 x,
-                state.phase === 'falling' &&
-                  !state.reducedMotion &&
-                  !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                state.phase === 'falling' && !state.reducedMotion && !systemReducesMotion()
                   ? y - WIDTH
                   : y,
               )
@@ -128,23 +156,58 @@ export function GameBoard() {
             }
             node.targetX = x
             node.targetY = y
-            node.clearing = state.clearing.includes(index)
-            node.ring.visible = state.selected === index || Boolean(state.hint?.includes(index))
+            node.index = index
+            node.clearing = clearing.has(index)
+            node.ring.visible = state.selected === index || hinted.has(index)
           })
+          if (state.wave && state.wave.id !== lastWave) {
+            lastWave = state.wave.id
+            effects.wave(state.wave, reduce)
+          }
+          if (state.remix && state.remix.id !== lastRemix) {
+            lastRemix = state.remix.id
+            effects.remix(state.remix, textures, reduce)
+          }
+          app.stage.setChildIndex(effects.layer, app.stage.children.length - 1)
         }
         sync()
         unsubscribe = useGameStore.subscribe(sync)
         app.ticker.add((ticker) => {
-          const reduce =
-            useGameStore.getState().reducedMotion ||
-            window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          const state = useGameStore.getState()
+          const reduce = state.reducedMotion || systemReducesMotion()
           const factor = reduce ? 1 : 1 - Math.pow(0.65, ticker.deltaTime)
+          if (reduce !== lastReduced) effects.clear()
+          lastReduced = reduce
+          effects.tick(ticker.deltaMS)
           for (const node of nodes.values()) {
+            if (state.remix && !node.special) {
+              const age = Date.now() - state.remix.startedAt
+              const rowDelay = Math.floor(node.index / SIZE) * 5
+              const u = easeOut((age - 240 - rowDelay) / 200)
+              node.view.position.set(
+                reduce ? node.targetX : WIDTH / 2 + (node.targetX - WIDTH / 2) * u,
+                reduce ? node.targetY : WIDTH / 2 + (node.targetY - WIDTH / 2) * u,
+              )
+              node.view.alpha = reduce
+                ? Math.max(0, Math.min(1, (age - 60) / 60))
+                : Math.min(1, u * 5)
+              node.view.scale.set(reduce ? 1 : 0.7 + u * 0.3)
+              continue
+            }
             node.view.x += (node.targetX - node.view.x) * factor
             node.view.y += (node.targetY - node.view.y) * factor
-            const targetScale = node.clearing ? 0.8 : 1
+            const targetScale = node.clearing && !reduce ? 0.8 : 1
             const scale = node.view.scale.x + (targetScale - node.view.scale.x) * factor
             node.view.scale.set(scale)
+            if (node.bornAt && !reduce) {
+              const u = Math.min(1, (Date.now() - node.bornAt) / BIRTH_DURATION)
+              node.view.scale.set(
+                u < 0.55
+                  ? 0.94 + 0.14 * easeOut(u / 0.55)
+                  : 1 + 0.08 * (1 - easeOut((u - 0.55) / 0.45)),
+              )
+              if (u >= 1) node.bornAt = null
+            }
             node.view.alpha += ((node.clearing ? 0 : 1) - node.view.alpha) * factor
           }
         })

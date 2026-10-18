@@ -4,6 +4,7 @@ import { getTileArt } from '../lib/art-assets'
 import { MEDICINE_IDS } from './medicines'
 import type { MedicineId } from './medicines'
 import { FRUIT_KINDS } from './engine'
+import * as engine from './engine'
 
 let useGameStore: typeof import('./store').useGameStore
 let usePlayerSetup: typeof import('../features/PlayerSetup/hooks/usePlayerSetup').usePlayerSetup
@@ -247,5 +248,110 @@ describe('special tile sessions', () => {
     await vi.runAllTimersAsync()
     await pending
     expect(useGameStore.getState()).toMatchObject({ moves: 0, outcome: 'won' })
+  })
+})
+
+describe('game feel lifecycle', () => {
+  it('animates an automatic dead-board remix through the same input lock', async () => {
+    const dead = Array.from({ length: 64 }, (_, i) => ({
+      id: `dead-${i}`,
+      kind: FRUIT_KINDS[(Math.floor(i / 8) + (i % 8)) % 3]!,
+    }))
+    expect(findMove(dead)).toBeNull()
+    vi.spyOn(engine, 'collapse').mockReturnValue(dead)
+    const board = fixtureBoard()
+    for (const index of [17, 18]) board[index] = { ...board[index]!, kind: 'mercaptopurine' }
+    useGameStore.setState({ board, reducedMotion: false })
+    const pending = useGameStore.getState().trySwap(11, 19)
+    await vi.advanceTimersByTimeAsync(660)
+    expect(useGameStore.getState()).toMatchObject({ phase: 'shuffling', moves: 23 })
+    expect(useGameStore.getState().remix?.previous).toBe(dead)
+    await vi.advanceTimersByTimeAsync(480)
+    await pending
+    expect(useGameStore.getState()).toMatchObject({ phase: 'idle', remix: null, moves: 23 })
+    expect(findMove(useGameStore.getState().board)).not.toBeNull()
+  })
+
+  it('respects the system reduced-motion preference without an in-app override', async () => {
+    const previous = globalThis.window
+    vi.stubGlobal('window', { matchMedia: () => ({ matches: true }) })
+    try {
+      useGameStore.getState().setReducedMotion(false)
+      const pending = useGameStore.getState().shuffle()
+      await vi.advanceTimersByTimeAsync(120)
+      await pending
+      expect(useGameStore.getState().phase).toBe('idle')
+    } finally {
+      vi.stubGlobal('window', previous)
+    }
+  })
+
+  it('pins specials, blocks overlapping input, and returns control exactly at 480ms', async () => {
+    const board: import('./engine').Board = fixtureBoard()
+    board[27] = { ...board[27]!, special: 'crown' }
+    useGameStore.setState({ board, reducedMotion: false })
+    const pending = useGameStore.getState().shuffle()
+    const mixed = useGameStore.getState().board
+    expect(mixed[27]).toBe(board[27])
+    expect(useGameStore.getState()).toMatchObject({ phase: 'shuffling', moves: 24, score: 0 })
+    expect(useGameStore.getState().remix?.previous).toBe(board)
+    await useGameStore.getState().shuffle()
+    await useGameStore.getState().trySwap(...findMove(mixed)!)
+    useGameStore.getState().select(0)
+    expect(useGameStore.getState().board).toBe(mixed)
+    expect(useGameStore.getState().selected).toBeNull()
+    await vi.advanceTimersByTimeAsync(479)
+    expect(useGameStore.getState().phase).toBe('shuffling')
+    await vi.advanceTimersByTimeAsync(1)
+    await pending
+    expect(useGameStore.getState()).toMatchObject({ phase: 'idle', remix: null, moves: 24 })
+    useGameStore.getState().select(0)
+    expect(useGameStore.getState().selected).toBe(0)
+  })
+
+  it('cancels an old shuffle when the medicine pool starts a fresh session', async () => {
+    const pending = useGameStore.getState().shuffle()
+    useGameStore.getState().setMedicines(['dasatinib'])
+    const fresh = useGameStore.getState().board
+    const move = findMove(fresh)!
+    const swapPending = useGameStore.getState().trySwap(...move)
+    await vi.advanceTimersByTimeAsync(480)
+    expect(useGameStore.getState().phase).not.toBe('idle')
+    await vi.runAllTimersAsync()
+    await Promise.all([pending, swapPending])
+    expect(useGameStore.getState().moves).toBe(23)
+    expect(useGameStore.getState().remix).toBeNull()
+  })
+
+  it('uses a short stationary shuffle for reduced motion', async () => {
+    useGameStore.getState().setReducedMotion(true)
+    const pending = useGameStore.getState().shuffle()
+    await vi.advanceTimersByTimeAsync(119)
+    expect(useGameStore.getState().phase).toBe('shuffling')
+    await vi.advanceTimersByTimeAsync(1)
+    await pending
+    expect(useGameStore.getState().phase).toBe('idle')
+    useGameStore.getState().setReducedMotion(false)
+  })
+
+  it('publishes the actual earned tile and clear origins without changing scoring', async () => {
+    const board = fixtureBoard()
+    for (const index of [17, 18, 20]) board[index] = { ...board[index]!, kind: 'mercaptopurine' }
+    useGameStore.setState({ board })
+    const pending = useGameStore.getState().trySwap(11, 19)
+    await vi.advanceTimersByTimeAsync(180)
+    expect(useGameStore.getState().wave).toMatchObject({
+      combo: 1,
+      points: 200,
+      scoreBefore: 0,
+      scoreAfter: 200,
+      clearing: [17, 18, 20],
+      created: [19],
+      activations: [],
+    })
+    useGameStore.getState().newGame()
+    await vi.runAllTimersAsync()
+    await pending
+    expect(useGameStore.getState()).toMatchObject({ wave: null, remix: null, score: 0 })
   })
 })

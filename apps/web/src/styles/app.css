@@ -1541,3 +1541,265 @@ fieldset {
     grid-row: 4;
   }
 }
+
+/* Game juice: these scene beats extend beyond the short control transitions. */
+.game-screen {
+  --juice-out: cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+  isolation: isolate;
+}
+.game-effects-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  overflow: hidden;
+}
+.goal-comet {
+  position: absolute;
+  left: -4px;
+  top: -8px;
+  width: 8px;
+  height: 16px;
+  border-radius: 8px;
+  background: linear-gradient(#fffbd7 50%, #ffd62f 50%);
+  box-shadow: 0 0 9px 3px #ffdf7570;
+}
+.cascade-title {
+  position: relative;
+  z-index: 4;
+  white-space: nowrap;
+  color: #ffe844;
+  font-size: clamp(19px, 4dvh, 35px);
+  font-weight: 700;
+  -webkit-text-stroke: 3px #38207d;
+  paint-order: stroke fill;
+  text-shadow:
+    0 3px 0 #38207d,
+    0 0 12px #ffdc6955;
+}
+.cascade-title[data-epic] {
+  font-size: clamp(20px, 4.3dvh, 38px);
+}
+.cascade-title > span[aria-hidden] > span {
+  display: inline-block;
+  animation: combo-letter 280ms var(--juice-out) both;
+}
+@keyframes combo-letter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.9) rotate(-5deg);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.08) rotate(1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+.goal-stat[data-won] {
+  animation: goal-breakthrough 650ms var(--juice-out) both;
+}
+@keyframes goal-breakthrough {
+  0%,
+  30%,
+  100% {
+    transform: scale(1);
+  }
+  55% {
+    transform: scale(1.08) rotate(-2deg);
+  }
+  75% {
+    transform: scale(1.03) rotate(1deg);
+  }
+}
+.victory-overlay {
+  isolation: isolate;
+  background: #10236aef;
+  gap: clamp(4px, 1.7cqh, 11px);
+  animation: victory-panel 240ms var(--juice-out) both;
+}
+.victory-overlay > * {
+  position: relative;
+  z-index: 1;
+}
+.victory-overlay .victory-rays {
+  position: absolute;
+  inset: -60%;
+  z-index: 0;
+  background: repeating-conic-gradient(from 0deg, #ffe67538 0deg 10deg, transparent 10deg 28deg);
+  opacity: 0;
+  animation: victory-rays 1800ms var(--juice-out) 250ms both;
+  pointer-events: none;
+}
+@keyframes victory-panel {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes victory-rays {
+  from {
+    opacity: 0;
+    transform: rotate(-15deg) scale(0.95);
+  }
+  to {
+    opacity: 0.8;
+    transform: rotate(15deg) scale(1);
+  }
+}
+.victory-emblem {
+  width: clamp(86px, 30cqh, 145px);
+  height: clamp(42px, 20cqh, 93px);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.victory-trophy {
+  position: absolute;
+  left: 5%;
+  top: 0;
+  width: 65%;
+  height: 100%;
+  color: #ffe24b;
+  fill: #ffd337;
+  stroke: #fff0a0;
+  stroke-width: 1.2px;
+  filter: drop-shadow(0 3px 0 #d18a13) drop-shadow(0 0 15px #ffe78466);
+  animation: trophy-bloom 600ms var(--juice-out) 280ms both;
+}
+@keyframes trophy-bloom {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.9) rotate(-8deg);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.08) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0);
+  }
+}
+.victory-avatar {
+  position: absolute;
+  right: -5%;
+  bottom: -6%;
+  width: 52%;
+  aspect-ratio: 1;
+  animation: avatar-cheer 420ms var(--juice-out) 450ms both;
+}
+@keyframes avatar-cheer {
+  0% {
+    opacity: 0;
+    transform: translateY(25px) scale(0.94) rotate(-12deg);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.04) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0);
+  }
+}
+.victory-overlay h2 {
+  color: #ffe748;
+  font-size: clamp(22px, 8cqh, 39px);
+  text-transform: uppercase;
+  -webkit-text-stroke: 3px #392378;
+  paint-order: stroke fill;
+  text-shadow: 0 3px 0 #392378;
+  animation: victory-panel 250ms var(--juice-out) 400ms both;
+}
+.victory-overlay .victory-score {
+  font-size: clamp(14px, 4.8cqh, 23px);
+  line-height: 1.1;
+  color: #fff5c7;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.victory-overlay .victory-confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+.victory-confetti i {
+  position: absolute;
+  top: -20px;
+  width: 5px;
+  height: 12px;
+  border-radius: 6px;
+  background-image: linear-gradient(transparent 50%, #fff5d790 50%);
+  animation: capsule-confetti 1600ms linear both;
+}
+@keyframes capsule-confetti {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -5px, 0) rotate(0);
+  }
+  12% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift), 440px, 0) rotate(var(--spin));
+  }
+}
+.victory-overlay .victory-skip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px;
+  font-size: 11px;
+  z-index: 3;
+}
+.victory-overlay[data-skipped] *,
+.victory-overlay[data-skipped],
+.victory-overlay[data-reduced] *,
+.victory-overlay[data-reduced],
+.cascade-title[data-reduced] > span[aria-hidden] > span {
+  animation: juice-fade 180ms var(--juice-out) both !important;
+  transform: none !important;
+}
+.victory-overlay[data-reduced] .victory-rays {
+  display: none;
+}
+@keyframes juice-fade {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .goal-stat[data-won],
+  .victory-overlay,
+  .victory-overlay *,
+  .cascade-title > span[aria-hidden] > span {
+    animation: juice-fade 180ms var(--juice-out) both !important;
+    transform: none !important;
+  }
+  .victory-rays,
+  .victory-confetti {
+    display: none;
+  }
+}
+.game-screen[data-reduced] .goal-stat[data-won] {
+  animation: juice-fade 180ms var(--juice-out) both !important;
+  transform: none !important;
+}

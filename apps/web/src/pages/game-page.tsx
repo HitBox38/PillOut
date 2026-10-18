@@ -26,6 +26,11 @@ import { TARGET, useGameStore } from '@/game/store'
 import type { Mode } from '@/game/store'
 import { AVATARS } from '@/features/PlayerSetup/constants'
 import { usePlayerSetup } from '@/features/PlayerSetup/hooks/usePlayerSetup'
+import GameEffects, {
+  CascadeTitle,
+  VictoryCelebration,
+  useReducedMotion,
+} from '@/features/GameEffects'
 
 const GameBoard = lazy(() =>
   import('@/components/game-board').then((module) => ({ default: module.GameBoard })),
@@ -41,6 +46,9 @@ export function GamePage() {
   const outcome = useGameStore((s) => s.outcome)
   const message = useGameStore((s) => s.message)
   const combo = useGameStore((s) => s.combo)
+  const wave = useGameStore((s) => s.wave)
+  const session = useGameStore((s) => s.session)
+  const reducedMotion = useReducedMotion()
   const nickname = usePlayerSetup((s) => s.nickname)
   const avatarId = usePlayerSetup((s) => s.avatar)
   const avatar = AVATARS.find((option) => option.id === avatarId) ?? AVATARS[0]
@@ -49,7 +57,11 @@ export function GamePage() {
   const game = useGameStore.getState
 
   return (
-    <section className="mobile-screen game-screen" aria-label="Pill Out game">
+    <section
+      className="mobile-screen game-screen"
+      aria-label="Pill Out game"
+      data-reduced={reducedMotion || undefined}
+    >
       <div className="screen-topline game-topline">
         <Link to="/" className="back-link" aria-label="Back to home">
           <ArrowLeft />
@@ -62,7 +74,7 @@ export function GamePage() {
         </Link>
       </div>
       <div className="game-dashboard">
-        <div className="game-stat goal-stat">
+        <div className="game-stat goal-stat" data-won={outcome === 'won' || undefined}>
           <h2>Goal</h2>
           <div>
             <Trophy aria-hidden="true" />
@@ -85,9 +97,13 @@ export function GamePage() {
         </div>
       </div>
       <h1 className="game-banner">
-        {combo > 1 && phase !== 'idle'
-          ? `${combo}× cascade! You’re on a roll!`
-          : 'Match your way to 2,000!'}
+        {wave && combo >= 3 ? (
+          <CascadeTitle key={wave.id} wave={wave} />
+        ) : combo > 1 && phase !== 'idle' ? (
+          `${combo}× cascade! You’re on a roll!`
+        ) : (
+          'Match your way to 2,000!'
+        )}
       </h1>
       <div className="board-space">
         <div className="board-frame">
@@ -100,37 +116,34 @@ export function GamePage() {
               <GameBoard />
             </Suspense>
           </div>
-          {(paused || outcome !== 'playing') && (
-            <div className="board-overlay">
-              {outcome === 'won' ? (
-                <Trophy size={44} />
-              ) : paused ? (
-                <Pause size={40} />
-              ) : (
-                <RotateCcw size={40} />
-              )}
-              <h2>
-                {outcome === 'won'
-                  ? 'You did it!'
-                  : outcome === 'lost'
-                    ? 'One more adventure?'
-                    : 'Taking a little break'}
-              </h2>
-              <p>
-                {outcome !== 'playing'
-                  ? `${score.toLocaleString()} points. Every match is a little win!`
-                  : 'Your next great match can wait.'}
-              </p>
-              <Button
-                className="candy-button"
-                onClick={() =>
-                  paused && outcome === 'playing' ? game().togglePause() : game().newGame()
-                }
-              >
-                {paused && outcome === 'playing' ? 'Keep playing' : 'Play again'}
-                <Play />
-              </Button>
-            </div>
+          {outcome === 'won' ? (
+            <VictoryCelebration
+              key={session}
+              score={score}
+              avatar={avatar}
+              onReplay={() => game().newGame()}
+            />
+          ) : (
+            (paused || outcome !== 'playing') && (
+              <div className="board-overlay">
+                {paused ? <Pause size={40} /> : <RotateCcw size={40} />}
+                <h2>{outcome === 'lost' ? 'One more adventure?' : 'Taking a little break'}</h2>
+                <p>
+                  {outcome !== 'playing'
+                    ? `${score.toLocaleString()} points. Every match is a little win!`
+                    : 'Your next great match can wait.'}
+                </p>
+                <Button
+                  className="candy-button"
+                  onClick={() =>
+                    paused && outcome === 'playing' ? game().togglePause() : game().newGame()
+                  }
+                >
+                  {paused && outcome === 'playing' ? 'Keep playing' : 'Play again'}
+                  <Play />
+                </Button>
+              </div>
+            )
           )}
         </div>
       </div>
@@ -164,7 +177,7 @@ export function GamePage() {
         <Button
           className="booster"
           disabled={blocked}
-          onClick={() => game().shuffle()}
+          onClick={() => void game().shuffle()}
           aria-label="Shuffle board"
         >
           <span className="booster-orb">
@@ -184,6 +197,7 @@ export function GamePage() {
         </Button>
         <GameSettings onRestart={setRestart} />
       </div>
+      <GameEffects />
       <Dialog
         open={restart !== null}
         onOpenChange={(open) => {
