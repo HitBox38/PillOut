@@ -77,7 +77,7 @@ CI has independent web and API jobs. The web job checks Oxc, types, tests, and i
 
 ## Gameplay
 
-- **Classic:** reach 2,000 points in 24 valid moves.
+- **Classic:** advance through saved levels with calibrated score goals, 22–26 base moves, and a ten-level wave of challenges and breathers. Retry help adds up to six moves after repeated losses. See the [difficulty research and tuning guide](docs/level-difficulty.md).
 - **Zen:** play without a move limit or an ending score.
 - Swap adjacent pills with two taps/clicks or a swipe. Invalid swaps revert without costing a move.
 - Match at least three of one color horizontally or vertically. Each cleared pill earns 50 points, multiplied by the cascade number.

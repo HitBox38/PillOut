@@ -9,10 +9,11 @@ import { useReducedMotion } from '../hooks/useReducedMotion'
 interface Props {
   score: number
   avatar: AvatarOption
-  onReplay: () => void
+  level: number
+  onContinue: () => void
 }
 
-export default function VictoryCelebration({ score, avatar, onReplay }: Props) {
+export default function VictoryCelebration({ score, avatar, level, onContinue }: Props) {
   const reduced = useReducedMotion()
   return (
     <div className="board-overlay victory-overlay" data-reduced={reduced || undefined}>
@@ -46,9 +47,9 @@ export default function VictoryCelebration({ score, avatar, onReplay }: Props) {
         <output>You did it!</output>
       </h2>
       <p className="victory-score">{score.toLocaleString()} points</p>
-      <p>Goal complete. Every match mattered!</p>
-      <Button className="candy-button" onClick={onReplay}>
-        Play again <Play />
+      <p>Level {level} complete. Progress saved!</p>
+      <Button className="candy-button" onClick={onContinue}>
+        Level {level + 1} <Play />
       </Button>
     </div>
   )

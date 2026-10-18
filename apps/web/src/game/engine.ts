@@ -11,6 +11,134 @@ export type Board = Pill[]
 export type Move = readonly [number, number]
 export type Random = () => number
 
+export type Difficulty = 'warmup' | 'breather' | 'steady' | 'challenge'
+export interface LevelConfig {
+  number: number
+  chapter: number
+  stage: number
+  difficulty: Difficulty
+  label: string
+  tip: string
+  target: number
+  moves: number
+  bonusMoves: number
+}
+
+// Median score over 24 random legal moves, including specials and cascades.
+// Recalibrate with `pnpm --filter @pillout/web run difficulty:report` after rule changes.
+const POOL_SCORE_BASELINES = [117500, 32550, 13200, 9100, 6800, 5700, 5450, 4950, 4650, 4500]
+const LEVEL_WAVE = [
+  {
+    difficulty: 'warmup',
+    label: 'Warm-up',
+    pressure: 0.1,
+    moves: 24,
+    tip: 'Start with three of a kind. There’s no rush.',
+  },
+  {
+    difficulty: 'warmup',
+    label: 'Find your flow',
+    pressure: 0.16,
+    moves: 24,
+    tip: 'Look for a match of four to earn a hammer.',
+  },
+  {
+    difficulty: 'steady',
+    label: 'Build momentum',
+    pressure: 0.24,
+    moves: 24,
+    tip: 'Try a T or L match to earn a bomb.',
+  },
+  {
+    difficulty: 'steady',
+    label: 'Keep it going',
+    pressure: 0.36,
+    moves: 24,
+    tip: 'Matches near the bottom can set up cascades.',
+  },
+  {
+    difficulty: 'challenge',
+    label: 'A little challenge',
+    pressure: 0.55,
+    moves: 22,
+    tip: 'Save a special for a chance to start a chain.',
+  },
+  {
+    difficulty: 'breather',
+    label: 'Take a breather',
+    pressure: 0.28,
+    moves: 26,
+    tip: 'A gentler goal and a little more room to play.',
+  },
+  {
+    difficulty: 'steady',
+    label: 'Back in the flow',
+    pressure: 0.45,
+    moves: 24,
+    tip: 'Scan the whole board before choosing your match.',
+  },
+  {
+    difficulty: 'challenge',
+    label: 'Make it special',
+    pressure: 0.65,
+    moves: 22,
+    tip: 'Five in a line earns a crown. Special chains go a long way.',
+  },
+  {
+    difficulty: 'breather',
+    label: 'Room to breathe',
+    pressure: 0.4,
+    moves: 26,
+    tip: 'Enjoy the extra space. Hints and shuffles are always free.',
+  },
+  {
+    difficulty: 'challenge',
+    label: 'Chapter challenge',
+    pressure: 0.85,
+    moves: 22,
+    tip: 'Put it all together: specials, chains, and cascades.',
+  },
+] as const
+
+export function getLevelConfig(number: number, kindCount: number, losses = 0): LevelConfig {
+  if (!Number.isSafeInteger(number) || number < 1 || number >= Number.MAX_SAFE_INTEGER)
+    throw new RangeError('Level must be a positive safe integer with room to advance')
+  if (!Number.isInteger(kindCount) || kindCount < 3 || kindCount > KINDS.length)
+    throw new RangeError('Unsupported tile pool size')
+  if (!Number.isSafeInteger(losses) || losses < 0)
+    throw new RangeError('Losses must be a nonnegative safe integer')
+  const chapter = Math.floor((number - 1) / LEVEL_WAVE.length)
+  const stage = (number - 1) % LEVEL_WAVE.length
+  const template = LEVEL_WAVE[stage]!
+  const growth = 1 + Math.min(chapter, 10) * 0.02
+  // Onboarding happens once; subsequent chapters start with a modest recovery level.
+  const pressure = chapter > 0 && stage < 3 ? [0.32, 0.4, 0.48][stage]! : template.pressure
+  const bonusMoves = Math.min(6, Math.floor(Math.max(0, losses) / 2) * 2)
+  const baseline = POOL_SCORE_BASELINES[kindCount - 3]!
+  // Challenge goals exceed the guaranteed 150 points per successful move,
+  // including with large pools where cascades are less frequent.
+  const minimumScore = template.moves * 150
+  const target =
+    template.difficulty === 'challenge'
+      ? minimumScore + ((baseline * template.moves) / 24 - minimumScore) * pressure
+      : baseline * pressure
+  return {
+    number,
+    chapter: chapter + 1,
+    stage: stage + 1,
+    difficulty:
+      chapter > 0 && stage < 3 ? (stage === 0 ? 'breather' : 'steady') : template.difficulty,
+    label:
+      chapter > 0 && stage < 3
+        ? ['A fresh chapter', 'Find your rhythm', 'Build momentum'][stage]!
+        : template.label,
+    tip: template.tip,
+    target: Math.max(1000, Math.round((target * growth) / 50) * 50),
+    moves: template.moves + bonusMoves,
+    bonusMoves,
+  }
+}
+
 let nextId = 0
 const pill = (random: Random, kinds: readonly Kind[]): Pill => ({
   id: `pill-${nextId++}`,

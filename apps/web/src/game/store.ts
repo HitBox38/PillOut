@@ -9,8 +9,9 @@ import {
   swap,
   shuffleBoard,
   FRUIT_KINDS,
+  getLevelConfig,
 } from './engine'
-import type { Board, Kind, Move } from './engine'
+import type { Board, Kind, LevelConfig, Move } from './engine'
 import { MEDICINE_IDS } from './medicines'
 import type { MedicineId } from './medicines'
 import { playGameSound, stopGameSounds } from './audio'
@@ -22,15 +23,19 @@ import {
 } from './effects'
 import type { ClearWave, BoardRemix } from './effects'
 
-export const TARGET = 2000
-export const START_MOVES = 24
 export type Mode = 'classic' | 'zen'
 type Phase = 'idle' | 'swapping' | 'clearing' | 'falling' | 'shuffling'
 type Outcome = 'playing' | 'won' | 'lost'
+interface Progress {
+  level: number
+  losses: number
+}
 
 interface GameState {
   board: Board
   kinds: readonly Kind[]
+  level: LevelConfig
+  progress: Progress
   score: number
   best: number
   moves: number
@@ -52,6 +57,7 @@ interface GameState {
   select: (index: number) => void
   trySwap: (a: number, b: number) => Promise<void>
   newGame: (mode?: Mode) => void
+  nextLevel: () => void
   setMedicines: (medicines: readonly MedicineId[]) => void
   showHint: () => void
   shuffle: () => Promise<void>
@@ -62,6 +68,39 @@ interface GameState {
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 let nextEffect = 0
+
+function roundConfig(progress: Progress, kinds: readonly Kind[], mode: Mode) {
+  const level = getLevelConfig(
+    progress.level,
+    kinds.length,
+    mode === 'classic' ? progress.losses : 0,
+  )
+  return {
+    level,
+    moves: level.moves,
+    message:
+      mode === 'zen'
+        ? 'No move limit. Just you and the colors.'
+        : `Level ${level.number} · ${level.label}. ${level.tip}${level.bonusMoves ? ` Retry help: +${level.bonusMoves} moves.` : ''}`,
+  }
+}
+
+function restoreProgress(value: unknown): Progress {
+  if (!value || typeof value !== 'object') return { level: 1, losses: 0 }
+  const progress = value as Partial<Progress>
+  return {
+    level:
+      Number.isSafeInteger(progress.level) &&
+      progress.level! > 0 &&
+      progress.level! < Number.MAX_SAFE_INTEGER - 1
+        ? progress.level!
+        : 1,
+    losses:
+      Number.isInteger(progress.losses) && progress.losses! >= 0
+        ? Math.min(6, progress.losses!)
+        : 0,
+  }
+}
 
 async function remixBoard(
   set: (state: Partial<GameState>) => void,
@@ -91,9 +130,10 @@ export const useGameStore = create<GameState>()(
     (set, get) => ({
       board: createBoard(),
       kinds: FRUIT_KINDS,
+      progress: { level: 1, losses: 0 },
+      ...roundConfig({ level: 1, losses: 0 }, FRUIT_KINDS, 'classic'),
       score: 0,
       best: 0,
-      moves: START_MOVES,
       combo: 0,
       cleared: 0,
       selected: null,
@@ -105,7 +145,6 @@ export const useGameStore = create<GameState>()(
       mode: 'classic',
       sound: false,
       reducedMotion: false,
-      message: 'A fresh board. A fresh start.',
       session: 0,
       wave: null,
       remix: null,
@@ -123,8 +162,8 @@ export const useGameStore = create<GameState>()(
         stopGameSounds()
         set({
           board: createBoard(Math.random, get().kinds),
+          ...roundConfig(get().progress, get().kinds, mode),
           score: 0,
-          moves: START_MOVES,
           combo: 0,
           cleared: 0,
           selected: null,
@@ -134,14 +173,14 @@ export const useGameStore = create<GameState>()(
           outcome: 'playing',
           paused: false,
           mode,
-          message:
-            mode === 'zen'
-              ? 'No move limit. Just you and the colors.'
-              : 'A fresh board. A fresh start.',
           session: get().session + 1,
           wave: null,
           remix: null,
         })
+      },
+      nextLevel: () => {
+        if (get().mode !== 'classic' || get().outcome !== 'won') return
+        get().newGame('classic')
       },
       select: (index) => {
         const state = get()
@@ -231,7 +270,7 @@ export const useGameStore = create<GameState>()(
         const outcome =
           get().mode === 'zen'
             ? 'playing'
-            : get().score >= TARGET
+            : get().score >= state.level.target
               ? 'won'
               : get().moves <= 0
                 ? 'lost'
@@ -240,7 +279,20 @@ export const useGameStore = create<GameState>()(
           await remixBoard(set, get, 'A fresh mix to keep you moving. No moves used.')
           return
         }
-        set({ board, phase: 'idle', outcome })
+        set({
+          board,
+          phase: 'idle',
+          outcome,
+          ...(state.mode === 'classic' && state.level.number === get().progress.level
+            ? outcome === 'won'
+              ? { progress: { level: state.level.number + 1, losses: 0 } }
+              : outcome === 'lost'
+                ? {
+                    progress: { ...get().progress, losses: Math.min(6, get().progress.losses + 1) },
+                  }
+                : {}
+            : {}),
+        })
         if (outcome === 'won' && get().sound) playGameSound('win')
       },
       showHint: () => {
@@ -264,7 +316,28 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: 'pillout-preferences',
-      partialize: ({ best, sound, reducedMotion }) => ({ best, sound, reducedMotion }),
+      partialize: ({ best, sound, reducedMotion, progress }) => ({
+        best,
+        sound,
+        reducedMotion,
+        progress,
+      }),
+      merge: (persisted, current) => {
+        const saved = persisted as Partial<GameState> | null
+        const progress = restoreProgress(saved?.progress)
+        return {
+          ...current,
+          best:
+            typeof saved?.best === 'number' && Number.isFinite(saved.best) && saved.best >= 0
+              ? saved.best
+              : current.best,
+          sound: typeof saved?.sound === 'boolean' ? saved.sound : current.sound,
+          reducedMotion:
+            typeof saved?.reducedMotion === 'boolean' ? saved.reducedMotion : current.reducedMotion,
+          progress,
+          ...roundConfig(progress, current.kinds, current.mode),
+        }
+      },
     },
   ),
 )
