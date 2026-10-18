@@ -25,7 +25,7 @@ importers:
       '@fontsource/dm-sans':
         specifier: ^5.3.0
         version: 5.3.0
-      '@fontsource/space-grotesk':
+      '@fontsource/fredoka':
         specifier: ^5.3.0
         version: 5.3.0
       '@tanstack/react-router':
@@ -137,8 +137,8 @@ packages:
   '@fontsource/dm-sans@5.3.0':
     resolution: {integrity: sha512-lYJtMXXO28q1z+yz+z8XKd0s4hXaa9QdkETzkyD760sidCv5heI86weYA0sx0Nc4pAMAQTUuyf4gO44cYKKS9g==}
 
-  '@fontsource/space-grotesk@5.3.0':
-    resolution: {integrity: sha512-ksnGizDPXIDuvqcTYTSrmZ+evx9sDlS8rp7+42BQ7wU+spt3twEoXfbJz672C+5CLg6VeUQwRy5RXshWb67LcQ==}
+  '@fontsource/fredoka@5.3.0':
+    resolution: {integrity: sha512-s2IhjQ50wDnKkkaKmjhtL0rxQg6ITsVusiipM3m7zUwVZZbbCKsscNDkngwp28xVzfIt7neWrkgU1qKqyTycQg==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -1302,7 +1302,7 @@ snapshots:
 
   '@fontsource/dm-sans@5.3.0': {}
 
-  '@fontsource/space-grotesk@5.3.0': {}
+  '@fontsource/fredoka@5.3.0': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
