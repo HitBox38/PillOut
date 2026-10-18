@@ -6,7 +6,7 @@ Classic uses a ten-level difficulty wave: learn, build confidence, meet a challe
 
 - **Vary challenge.** King describes Candy Crush’s easier and harder levels as an intentional up-and-down experience. Pillout applies this principle with visible breather levels. See [King’s interview on level design and testing, reported by AP](https://apnews.com/article/547254aaa06bf026df5b41458ac62dcc).
 - **Account for tile variety.** King’s senior level designer identifies layout, design style, spawn rates, and blockers as separate difficulty drivers. The number of spawning colors is one control. Pillout’s medicine selection already changes its number of match kinds, so goals compensate for this. See [Lucien Chen, GDC 2020: Analyzing Difficulty Drivers in Candy Crush Games](https://media.gdcvault.com/gdcsummer2020/presentations/GDC2020%20Final%20PPT.pdf), slides 3–7.
-- **Make actions produce visible progress.** The same talk describes positive feedback from removing blocker layers and opening space. Pillout applies that feedback principle through its existing clears, earned specials, cascades, and victory feedback, and now through lasting level progress. Pillout does not currently have blockers.
+- **Make actions produce visible progress.** The same talk describes positive feedback from removing blocker layers and opening space. Pillout applies that feedback principle through its existing clears, earned specials, cascades, and victory feedback, and now through lasting level progress. Bear-rescue levels now add a fixed covering beneath playable pills; the covering does not block swaps or gravity.
 - **Test different play styles.** Automated match-three research uses procedural personas to approximate human strategies. The calibration tool compares random legal moves with a simple strategy favoring larger immediate clears and earned specials. See [Automated Playtesting of Matching Tile Games](https://arxiv.org/abs/1907.06570).
 - **Validate with people.** Puzzle-difficulty research models difficulty from gameplay telemetry; automated difficulty and churn research explicitly models skill, persistence, and boredom. Simulated wins cannot demonstrate human enjoyment or retention. See [Statistical Modelling of Level Difficulty in Puzzle Games](https://arxiv.org/abs/2107.03305) and [Predicting Game Difficulty and Churn Without Players](https://arxiv.org/abs/2008.12937).
 
@@ -29,7 +29,13 @@ The engagement hypothesis is that clear goals, visible improvement, earned combi
 
 The opening stages teach matching and specials once. Later chapters begin with recovery and return to a higher baseline. Goals grow by 2% of the original baseline per chapter, reaching a 20% increase in chapter 11 and staying bounded afterward. Stages 5, 8, and 10 lead into gentler levels.
 
-All goals are score goals. This first system varies pacing and move budgets with existing mechanics. Collection goals, board layouts, blockers, and authored lessons would add strategic variety in later design work.
+Stages 1, 4, and 8 are bear-rescue goals requiring 1, 2, and 3 bears respectively in every chapter. Other stages retain calibrated score goals. Rescue goals replace the score requirement; the goal panel shows rescued/required bears, and score remains a bonus.
+
+Each bear has a fixed, non-overlapping 2-by-2 footprint beneath normal playable pills. Stage 1 places a bear at row 4, column 4; stage 4 uses rows/columns (3, 2) and (6, 6); stage 8 uses (2, 3), (4, 6), and (7, 2), counting from one. Layouts repeat across chapters and stay the same on retries and medicine changes.
+
+The whole board starts with a single covering layer. Every cleared cell and every cell converted into a special permanently uncovers, including cascades and chained blasts. Adjacent matches alone do not uncover a cell. Revealing all four cells collects a bear once; other covering may remain when all bears are rescued. Pills fall and refill normally. Shuffles preserve bears and discoveries. Restarting or refreshing begins a fresh attempt with covering restored; Zen has no rescue state.
+
+Move budgets and announced retry help stay the same. The final move can win after all its cascades settle. A high score alone cannot win a rescue level, and winning unlocks the next level through the same saved progression.
 
 ## Tile-pool calibration
 
@@ -69,9 +75,9 @@ Compensation is approximate: score distributions, legal move density, special av
 pnpm --filter @pillout/web run difficulty:report --runs=100
 ```
 
-The offline tool uses the actual engine, seeds 1–100, all ten pool sizes, and random and greedy policies. Each policy plays 32 moves, so one score trajectory evaluates normal budgets and full six-move help. Greedy choices see only the immediate resolution, prefer earned specials, and never inspect future refills. The report includes score percentiles and selected-level pass rates. Gameplay sends no new analytics.
+The offline tool uses the actual engine and evaluates the correct score or rescue completion condition for each level. It runs seeds 1–100, all ten pool sizes, and random and greedy policies. Each policy plays 32 moves, so one score trajectory evaluates normal budgets and full six-move help. Greedy choices see only the immediate resolution, prefer earned specials, and never inspect future refills. The report includes score percentiles and selected-level pass rates. Gameplay sends no new analytics.
 
-The initial 2,000 simulated games produced these representative results:
+Before bear-rescue goals were introduced, the initial 2,000 simulated games produced these representative score-goal results:
 
 | Kinds | Level 10 random | Level 10 greedy | Level 110 random | Level 110 random with full help |
 | ----: | --------------: | --------------: | ---------------: | ------------------------------: |
@@ -79,7 +85,9 @@ The initial 2,000 simulated games produced these representative results:
 |     6 |             66% |             93% |              38% |                             71% |
 |    12 |             47% |             69% |              22% |                             85% |
 
-Level 1 and stage 6 passed in every run. Stage 9 passed in 99–100% of random-policy runs. These are simulation results, not human win-rate targets. Fruit-only boards are particularly generous to greedy play; score-only levels may become easy for practiced players. Human playtesting and additional goal types are needed before tuning for long-term engagement.
+In that earlier score-only configuration, Level 1 and stage 6 passed in every run. Stage 9 passed in 99–100% of random-policy runs. These are simulation results, not human win-rate targets. Fruit-only boards are particularly generous to greedy play; score-only levels may become easy for practiced players. These results do not calibrate the new rescue goals; rescue completion now needs its own simulation and human playtesting.
+
+A preliminary rescue run with seeds 1–20 across all ten pool sizes and both policies completed 400 simulated games. With three kinds, both policies rescued all bears on stages 1, 4, and 8 in every run. With twelve kinds, the random policy completed those stages in 55%, 40%, and 5% of runs; the greedy policy completed them in 70%, 35%, and 5%. These policies do not target bear discoveries, and twenty seeds are a small sample. Keep the agreed bear counts and existing move budgets for this first version, and playtest larger medicine pools before treating rescue difficulty as calibrated.
 
 After changes to scoring, specials, board size, or refills, rerun the report and update `POOL_SCORE_BASELINES` and `LEVEL_WAVE` in `apps/web/src/game/engine.ts`. Check distributions and both strategies, then test representative pools on touch screens.
 

@@ -14,6 +14,7 @@ export const ART_SOURCES = {
   bomb: { src: '/art/bomb.png', width: 1254 },
   hammer: { src: '/art/hammer.png', width: 1254 },
   crown: { src: '/art/crown.png', width: 1355 },
+  bear: { src: '/art/bear.png', width: 1230 },
 } as const
 
 export type ArtSource = keyof typeof ART_SOURCES

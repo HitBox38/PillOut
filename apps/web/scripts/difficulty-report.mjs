@@ -10,8 +10,19 @@ if (!Number.isSafeInteger(runs) || runs < 1) throw new Error('--runs must be a p
 const server = await createServer({ server: { middlewareMode: true } })
 try {
   const engine = await server.ssrLoadModule('/src/game/engine.ts')
-  const { KINDS, SIZE, createBoard, resolveBoard, swap, collapse, shuffleBoard, getLevelConfig } =
-    engine
+  const {
+    KINDS,
+    SIZE,
+    createBoard,
+    resolveBoard,
+    swap,
+    collapse,
+    shuffleBoard,
+    getLevelConfig,
+    createRescue,
+    resolveRescue,
+    goalReached,
+  } = engine
   const pairs = Array.from({ length: SIZE * SIZE }, (_, i) => [
     ...(i % SIZE < SIZE - 1 ? [[i, i + 1]] : []),
     ...(i < SIZE * (SIZE - 1) ? [[i, i + SIZE]] : []),
@@ -20,7 +31,7 @@ try {
     const kinds = KINDS.slice(0, count)
     for (const policy of ['random', 'greedy']) {
       const scores = []
-      const levels = [1, 3, 5, 6, 8, 9, 10, 11, 20, 110].map((number) => ({
+      const levels = [1, 3, 4, 5, 6, 8, 9, 10, 11, 20, 110].map((number) => ({
         ...getLevelConfig(number, count),
         passed: 0,
         passedWithHelp: 0,
@@ -31,6 +42,7 @@ try {
           seed = (seed * 1664525 + 1013904223) >>> 0
           return seed / 2 ** 32
         }
+        const rescues = levels.map((level) => createRescue(level.goal))
         let board = createBoard(random, kinds)
         let score = 0
         for (let move = 1; move <= 32; move++) {
@@ -55,14 +67,19 @@ try {
           while (resolution.clearing.length) {
             if (++combo > 1000) throw new Error('Cascade did not settle')
             score += (resolution.clearing.length + resolution.created.length) * 50 * combo
+            levels.forEach((level, index) => {
+              rescues[index] = resolveRescue(level.goal, rescues[index], resolution)
+            })
             board = collapse(resolution.board, resolution.clearing, random, kinds)
             resolution = resolveBoard(board)
           }
           if (move === 24) scores.push(score)
-          for (const level of levels) {
-            if (move === level.moves && score >= level.target) level.passed++
-            if (move === level.moves + 6 && score >= level.target) level.passedWithHelp++
-          }
+          levels.forEach((level, index) => {
+            if (move === level.moves && goalReached(level.goal, score, rescues[index]))
+              level.passed++
+            if (move === level.moves + 6 && goalReached(level.goal, score, rescues[index]))
+              level.passedWithHelp++
+          })
         }
       }
       scores.sort((a, b) => a - b)
@@ -74,9 +91,9 @@ try {
           p10: scores[Math.floor(runs * 0.1)],
           median: scores[Math.floor(runs * 0.5)],
           p90: scores[Math.floor(runs * 0.9)],
-          levels: levels.map(({ number, target, moves, passed, passedWithHelp }) => ({
+          levels: levels.map(({ number, goal, moves, passed, passedWithHelp }) => ({
             level: number,
-            target,
+            goal: goal.type === 'score' ? goal : { type: 'bears', required: goal.bears.length },
             moves,
             passRate: passed / runs,
             passRateWithHelp: passedWithHelp / runs,
