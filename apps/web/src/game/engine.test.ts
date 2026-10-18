@@ -9,6 +9,8 @@ import {
   swap,
   resolveBoard,
   shuffleBoard,
+  getLevelConfig,
+  KINDS,
 } from './engine'
 import type { Board } from './engine'
 
@@ -26,6 +28,75 @@ function cleanBoard(): Board {
     kind: FIXTURE_KINDS[(Math.floor(i / SIZE) * 2 + (i % SIZE)) % FIXTURE_KINDS.length]!,
   }))
 }
+
+describe('level difficulty', () => {
+  it('places gentler levels after challenges for every supported tile pool', () => {
+    for (let kinds = 3; kinds <= KINDS.length; kinds++) {
+      for (const peak of [5, 8, 10, 20, 100]) {
+        const challenge = getLevelConfig(peak, kinds)
+        const recovery = getLevelConfig(peak + 1, kinds)
+        expect(challenge.difficulty).toBe('challenge')
+        expect(recovery.difficulty).toBe('breather')
+        expect(recovery.target / recovery.moves).toBeLessThan(challenge.target / challenge.moves)
+      }
+    }
+  })
+
+  it('ramps onboarding once and caps later difficulty growth', () => {
+    expect(getLevelConfig(1, 3).target).toBeLessThan(getLevelConfig(2, 3).target)
+    expect(getLevelConfig(2, 3).target).toBeLessThan(getLevelConfig(3, 3).target)
+    expect(getLevelConfig(11, 3).difficulty).toBe('breather')
+    expect(getLevelConfig(21, 3).target).toBeGreaterThan(getLevelConfig(11, 3).target)
+    expect(getLevelConfig(110, 3).target).toBe(getLevelConfig(1000, 3).target)
+  })
+
+  it('compensates for additional match kinds without changing scoring or tile pools', () => {
+    for (const number of [1, 5, 10, 50]) {
+      let previous = Infinity
+      for (let kinds = 3; kinds <= KINDS.length; kinds++) {
+        const level = getLevelConfig(number, kinds)
+        expect(level.target).toBeLessThanOrEqual(previous)
+        expect(level.target).toBeGreaterThanOrEqual(1000)
+        expect(level.target % 50).toBe(0)
+        previous = level.target
+      }
+    }
+  })
+
+  it('requires more than ordinary three-tile matches to pass a challenge, even with all medicines', () => {
+    for (const number of [5, 8, 10]) {
+      const level = getLevelConfig(number, KINDS.length)
+      expect(level.target).toBeGreaterThan(level.moves * 150)
+    }
+  })
+
+  it('adds bounded retry help every two losses while keeping the goal fixed', () => {
+    const base = getLevelConfig(10, 6)
+    for (const [losses, bonus] of [
+      [0, 0],
+      [1, 0],
+      [2, 2],
+      [3, 2],
+      [4, 4],
+      [6, 6],
+      [100, 6],
+    ]) {
+      const retry = getLevelConfig(10, 6, losses!)
+      expect(retry.target).toBe(base.target)
+      expect(retry.moves).toBe(base.moves + bonus!)
+      expect(retry.bonusMoves).toBe(bonus)
+    }
+  })
+
+  it('rejects invalid level and pool inputs', () => {
+    for (const level of [0, -1, 1.5, Infinity, NaN, Number.MAX_SAFE_INTEGER])
+      expect(() => getLevelConfig(level, 3)).toThrow(RangeError)
+    for (const kinds of [2, 13, 3.5, NaN])
+      expect(() => getLevelConfig(1, kinds)).toThrow(RangeError)
+    for (const losses of [-1, NaN, Infinity, 1.5])
+      expect(() => getLevelConfig(1, 3, losses)).toThrow(RangeError)
+  })
+})
 
 describe('match-three rules', () => {
   it('creates full, uniquely identified boards without opening matches and with legal moves', () => {

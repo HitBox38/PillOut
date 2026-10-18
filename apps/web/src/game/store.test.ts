@@ -1,24 +1,24 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { adjacent, findMatches, findMove, swap, SIZE } from './engine'
 import { getTileArt } from '../lib/art-assets'
 import { MEDICINE_IDS } from './medicines'
 import type { MedicineId } from './medicines'
 import { FRUIT_KINDS } from './engine'
 import * as engine from './engine'
+import { useGameStore } from './store'
+import { usePlayerSetup } from '../features/PlayerSetup/hooks/usePlayerSetup'
 
-let useGameStore: typeof import('./store').useGameStore
-let usePlayerSetup: typeof import('../features/PlayerSetup/hooks/usePlayerSetup').usePlayerSetup
 const FIXTURE_KINDS = ['mercaptopurine', 'mint', 'gold', 'lavender', 'methotrexate'] as const
 
-beforeAll(async () => {
+vi.hoisted(() => {
   const memory = new Map<string, string>()
-  vi.stubGlobal('localStorage', {
+  const storage = {
     getItem: (key: string) => memory.get(key) ?? null,
     setItem: (key: string, value: string) => memory.set(key, value),
     removeItem: (key: string) => memory.delete(key),
-  })
-  ;({ useGameStore } = await import('./store'))
-  ;({ usePlayerSetup } = await import('../features/PlayerSetup/hooks/usePlayerSetup'))
+  }
+  vi.stubGlobal('localStorage', storage)
+  vi.stubGlobal('window', { localStorage: storage })
 })
 beforeEach(() => {
   vi.useFakeTimers()
@@ -28,6 +28,7 @@ beforeEach(() => {
     return seed / 2 ** 32
   })
   usePlayerSetup.setState(usePlayerSetup.getInitialState(), true)
+  useGameStore.setState({ progress: { level: 1, losses: 0 }, sound: false, reducedMotion: false })
   useGameStore.getState().setMedicines([])
   useGameStore.getState().newGame('classic')
 })
@@ -156,7 +157,7 @@ describe('game session', () => {
   })
 
   it('ends a Classic game when the target is reached, including on the final move', async () => {
-    useGameStore.setState({ score: 1950, moves: 1 })
+    useGameStore.setState({ score: useGameStore.getState().level.target - 50, moves: 1 })
     const pending = useGameStore.getState().trySwap(...findMove(useGameStore.getState().board)!)
     await vi.runAllTimersAsync()
     await pending
@@ -176,6 +177,162 @@ describe('game session', () => {
     expect(useGameStore.getState().outcome).toBe('lost')
     expect(useGameStore.getState().moves).toBe(0)
     expect(useGameStore.getState().score).toBe(150)
+  })
+})
+
+describe('level progression', () => {
+  it('unlocks the next level once after a real win, then starts its own goal and move budget', async () => {
+    useGameStore.setState({ progress: { level: 4, losses: 4 } })
+    useGameStore.getState().newGame()
+    useGameStore.setState({ score: useGameStore.getState().level.target - 50, moves: 1 })
+    const pending = useGameStore.getState().trySwap(...findMove(useGameStore.getState().board)!)
+    await vi.runAllTimersAsync()
+    await pending
+    expect(useGameStore.getState()).toMatchObject({
+      outcome: 'won',
+      level: { number: 4 },
+      progress: { level: 5, losses: 0 },
+    })
+    useGameStore.getState().nextLevel()
+    const next = useGameStore.getState()
+    expect(next).toMatchObject({
+      outcome: 'playing',
+      score: 0,
+      moves: 22,
+      level: { number: 5, difficulty: 'challenge' },
+    })
+    expect(next.level.target).toBe(engine.getLevelConfig(5, 3).target)
+    useGameStore.getState().nextLevel()
+    expect(useGameStore.getState().board).toBe(next.board)
+  })
+
+  it('counts completed losses once and applies announced retry help only to the next attempt', async () => {
+    vi.spyOn(engine, 'collapse').mockImplementation(() => fixtureBoard())
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const board = fixtureBoard()
+      for (const index of [17, 18]) board[index] = { ...board[index]!, kind: 'mercaptopurine' }
+      useGameStore.setState({ board, moves: 1 })
+      const target = useGameStore.getState().level.target
+      const pending = useGameStore.getState().trySwap(11, 19)
+      await vi.runAllTimersAsync()
+      await pending
+      expect(useGameStore.getState()).toMatchObject({
+        outcome: 'lost',
+        moves: 0,
+        progress: { level: 1, losses: attempt },
+        level: { target, bonusMoves: 0 },
+      })
+      await useGameStore.getState().trySwap(11, 19)
+      useGameStore.getState().nextLevel()
+      expect(useGameStore.getState().progress.losses).toBe(attempt)
+      useGameStore.getState().newGame()
+    }
+    expect(useGameStore.getState()).toMatchObject({
+      moves: 26,
+      level: { number: 1, bonusMoves: 2 },
+    })
+    expect(useGameStore.getState().message).toContain('+2 moves')
+    const target = useGameStore.getState().level.target
+    useGameStore.getState().newGame()
+    expect(useGameStore.getState()).toMatchObject({
+      moves: 26,
+      progress: { losses: 2 },
+      level: { target },
+    })
+  })
+
+  it('preserves progression through medicine changes and Zen without leaking retry help into Zen', async () => {
+    useGameStore.setState({ progress: { level: 10, losses: 6 } })
+    useGameStore.getState().newGame()
+    const fruitGoal = useGameStore.getState().level.target
+    useGameStore.getState().setMedicines(MEDICINE_IDS)
+    expect(useGameStore.getState().level.target).toBeLessThan(fruitGoal)
+    expect(useGameStore.getState()).toMatchObject({
+      moves: 28,
+      level: { number: 10, bonusMoves: 6 },
+    })
+    useGameStore.getState().newGame('zen')
+    useGameStore.setState({ score: 1000000 })
+    const pending = useGameStore.getState().trySwap(...findMove(useGameStore.getState().board)!)
+    await vi.runAllTimersAsync()
+    await pending
+    expect(useGameStore.getState()).toMatchObject({
+      outcome: 'playing',
+      progress: { level: 10, losses: 6 },
+      level: { bonusMoves: 0 },
+    })
+    useGameStore.getState().nextLevel()
+    expect(useGameStore.getState().mode).toBe('zen')
+    useGameStore.getState().newGame('classic')
+    expect(useGameStore.getState()).toMatchObject({
+      moves: 28,
+      level: { number: 10, bonusMoves: 6 },
+    })
+  })
+
+  it('does not award progress or a loss when a resolving attempt is abandoned', async () => {
+    useGameStore.setState({ score: useGameStore.getState().level.target - 50, moves: 1 })
+    const pending = useGameStore.getState().trySwap(...findMove(useGameStore.getState().board)!)
+    useGameStore.getState().newGame()
+    await vi.runAllTimersAsync()
+    await pending
+    expect(useGameStore.getState()).toMatchObject({
+      outcome: 'playing',
+      score: 0,
+      progress: { level: 1, losses: 0 },
+    })
+  })
+
+  it('saves the unlock immediately, without persisting the active board', async () => {
+    useGameStore.setState({ score: useGameStore.getState().level.target - 50 })
+    const pending = useGameStore.getState().trySwap(...findMove(useGameStore.getState().board)!)
+    await vi.runAllTimersAsync()
+    await pending
+    const saved = JSON.parse(localStorage.getItem('pillout-preferences')!)
+    expect(saved.state.progress).toEqual({ level: 2, losses: 0 })
+    expect(saved.state).not.toHaveProperty('board')
+    useGameStore.setState({ progress: { level: 12, losses: 4 }, best: 123456 })
+    const storage = localStorage.getItem('pillout-preferences')!
+    useGameStore.setState({ progress: { level: 1, losses: 0 }, best: 0 })
+    localStorage.setItem('pillout-preferences', storage)
+    await useGameStore.persist.rehydrate()
+    useGameStore.getState().newGame()
+    expect(useGameStore.getState()).toMatchObject({
+      best: 123456,
+      score: 0,
+      moves: 28,
+      progress: { level: 12, losses: 4 },
+      level: { number: 12 },
+    })
+  })
+
+  it.each([
+    { best: 4000, sound: true },
+    { progress: { level: -2, losses: -5 } },
+    { progress: { level: 1.5, losses: 'bad' }, board: [], mode: 'zen' },
+  ])('restores old preferences and rejects invalid progress: %j', async (state) => {
+    localStorage.setItem('pillout-preferences', JSON.stringify({ version: 0, state }))
+    await useGameStore.persist.rehydrate()
+    expect(useGameStore.getState()).toMatchObject({
+      progress: { level: 1, losses: 0 },
+      level: { number: 1 },
+      mode: 'classic',
+    })
+    expect(useGameStore.getState().board).toHaveLength(64)
+  })
+
+  it('preserves preferences saved before levels existed', async () => {
+    localStorage.setItem(
+      'pillout-preferences',
+      JSON.stringify({ version: 0, state: { best: 4000, sound: true, reducedMotion: true } }),
+    )
+    await useGameStore.persist.rehydrate()
+    expect(useGameStore.getState()).toMatchObject({
+      best: 4000,
+      sound: true,
+      reducedMotion: true,
+      progress: { level: 1, losses: 0 },
+    })
   })
 })
 
@@ -243,7 +400,7 @@ describe('special tile sessions', () => {
   it('lets a special activation win on the final Classic move', async () => {
     const board: import('./engine').Board = fixtureBoard()
     board[26] = { ...board[26]!, special: 'bomb' }
-    useGameStore.setState({ board, score: 1900, moves: 1 })
+    useGameStore.setState({ board, score: useGameStore.getState().level.target - 100, moves: 1 })
     const pending = useGameStore.getState().trySwap(26, 27)
     await vi.runAllTimersAsync()
     await pending

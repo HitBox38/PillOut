@@ -80,8 +80,13 @@ function HowToPlay() {
         <li>
           <h2>Go for the goal</h2>
           <p>
-            Reach 2,000 points in 24 moves in Classic. Switch to Zen in settings for unlimited
-            moves. Hints and shuffles are free.
+            Reach each level’s point goal before your moves run out in Classic. Goals grow in waves,
+            with gentler levels between challenges. Your level progress is saved on this device.
+            Switch to Zen in settings for unlimited moves. Hints and shuffles are free.
+          </p>
+          <p>
+            After every two losses on a level, your next try gets two extra moves, up to six. Your
+            goal stays the same. You can retry as often as you like.
           </p>
         </li>
       </ol>
