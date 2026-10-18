@@ -6,12 +6,14 @@ Requires Python 3.12 or newer and uv 0.9.27 or newer. Local development and CI u
 
 ## Database (Turso)
 
-The API uses [Turso](https://turso.tech/) via `libsql-client`. Set:
+The API uses [Turso](https://turso.tech/) via the maintained `libsql` SDK. Remote connections use HTTP; the deprecated `libsql-client` SDK selects WebSockets for `libsql://` URLs, which Turso's AWS endpoints no longer support. Set:
 
 - `TURSO_DATABASE_URL` — libSQL URL from the Turso dashboard (optional; defaults to the shared Pillout Turso database when unset)
 - `TURSO_AUTH_TOKEN` — database auth token (required for remote URLs; may be empty for local `file:` URLs)
 
 On startup the app applies `schema.sql`, adds missing catalog-key and selected-avatar columns to older databases, and inserts missing built-in medicines and avatars. Unique `catalog_key` values identify web sprite frames independently of numeric database IDs; existing rows and catalog edits are preserved. Custom catalog rows without a supported key remain available through the API but do not appear in the web pickers.
+
+A single database worker owns the SDK connection and serializes queries, with autocommit enabled so writes persist between requests. The async API handlers use the same query interface for remote Turso and local `file:` databases.
 
 Copy `.env.example` to `.env`, set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, then run `pnpm run dev` (uvicorn loads `.env` via `--env-file`). For local SQLite without Turso:
 
@@ -20,7 +22,7 @@ export TURSO_DATABASE_URL="file:./data/pillout.db"
 export TURSO_AUTH_TOKEN=""
 ```
 
-On Vercel, add the same variables in the project environment settings.
+On Vercel, connect the Turso integration and confirm it supplies both variables for the intended deployment environments. See the root [deployment setup](../../README.md#deployment). Redeploy after connecting the integration or changing its variables.
 
 From this directory:
 
@@ -58,4 +60,6 @@ uv sync --locked --no-dev
 uv run --locked --no-dev uvicorn pillout_api.main:app --host 0.0.0.0 --port 8000
 ```
 
-The database client is configured in `pillout_api.database` from `TURSO_*` environment variables. Hosting, production routing, authentication, and shared game state remain deployment concerns outside this package.
+The database client is configured in `pillout_api.database` from `TURSO_*` environment variables. Root `vercel.json` selects `src.pillout_api.main:app` relative to this directory, installs runtime dependencies with `uv sync --locked --no-dev --no-install-project`, and includes `schema.sql` in the Python function. The app loads directly from the bundled source; package-relative imports keep it independent of editable-install paths from the build machine. The build command checks that this entry point imports without connecting to Turso. Routing sends `/api/*`, `/docs`, `/redoc`, and `/openapi.json` to this service without stripping their paths. The pnpm `build` wrapper still builds the independent Python distribution; Vercel packages the ASGI function directly.
+
+Authentication and shared game state remain outside this deployment setup. The frontend saves player profiles and selected avatars; patient plans and gameplay remain in the browser.

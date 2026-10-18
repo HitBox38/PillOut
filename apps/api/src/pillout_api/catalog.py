@@ -1,6 +1,11 @@
 """Stable sprite identities shared with the web artwork registry."""
 
-import libsql_client
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .database import DatabaseClient
 
 MEDICINES = (
     ("mercaptopurine", "Mercaptopurine"),
@@ -24,7 +29,7 @@ AVATARS = (
 )
 
 
-async def seed_catalog(db: libsql_client.Client) -> None:
+async def seed_catalog(db: DatabaseClient) -> None:
     """Insert missing built-ins without overwriting catalog edits or existing rows."""
     for key, name in MEDICINES:
         await db.execute(

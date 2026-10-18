@@ -10,7 +10,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), [CONTEXT.md](CONTEXT.md), and the [skil
 - Use the pnpm version pinned in `package.json`. Translate imported skill examples from `npm run` to `pnpm run`, `npx` for installed tools to `pnpm exec`, and `npx` for temporary tools to `pnpm dlx`.
 - Use Oxlint and Oxfmt for JavaScript, TypeScript, and shared documentation. Use Ruff and mypy for Python. Preserve strict type checking in both applications.
 - Keep app dependencies scoped: pnpm manages JavaScript; uv manages Python through `apps/api/pyproject.toml` and `apps/api/uv.lock`. The API package wrapper only bridges commands.
-- Keep web and API independently buildable. Production hosting and API routing remain undecided; do not introduce provider-specific deployment configuration without a task that calls for it.
+- Keep web and API independently buildable. Root `vercel.json` deploys them together through Vercel Services with Turso environment variables supplied by the project's integration. Keep provider-specific configuration at the deployment boundary.
 - Keep pure game rules in `apps/web/src/game/engine.ts`, session state in `apps/web/src/game/store.ts`, and rendering/input in `apps/web/src/components/game-board.tsx`. UI components observe state rather than implementing a second set of game rules.
 - Follow the feature-folder skill for new self-contained features. Preserve the current engine/store/renderer boundaries; reorganizing existing code needs a task that calls for that work.
 

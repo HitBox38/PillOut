@@ -2,7 +2,7 @@
 
 # Pillout
 
-A mobile-first match-three pill game in a monorepo with a React frontend and a Python FastAPI backend. The apps can be built and deployed independently; hosting will be chosen later.
+A mobile-first match-three pill game in a monorepo with a React frontend and a Python FastAPI backend. The apps build independently and deploy together to Vercel, with Turso for the API database.
 
 ## Run locally
 
@@ -55,7 +55,7 @@ The root orchestrates tasks with pnpm's built-in workspaces. JavaScript dependen
 - **API:** FastAPI, Pydantic, and Uvicorn, with pytest/HTTPX2 for tests, Ruff for lint and formatting, and mypy for type checking.
 - **Shared tooling:** pnpm, Oxlint, Oxfmt, contributor guidance, and personal skills.
 
-The pure game engine stays independent of React, Pixi, and Zustand. The store owns session lifecycle and scoring; the renderer consumes state and handles presentation and input. The API currently exposes a health endpoint; game state and scores remain local to the browser. Accounts, persistence, shared leaderboards, and production deployment are future decisions.
+The pure game engine stays independent of React, Pixi, and Zustand. The store owns session lifecycle and scoring; the renderer consumes state and handles presentation and input. Player setup loads medicine and avatar catalogs from the API and saves the player profile and selected avatar on Welcome submission. Patient details, medicine selections, schedules, game state, and scores remain local to the browser. The current player ID stays in memory, so refreshing starts new setup. Authentication and shared leaderboards are future decisions.
 
 See [web documentation](apps/web/README.md), [API documentation](apps/api/README.md), and [CONTEXT.md](CONTEXT.md) for details.
 
@@ -93,8 +93,27 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), and [CONTEXT.md
 
 ## Deployment
 
-The web build is a static site under `apps/web/dist/`. Its host must serve `index.html` for frontend routes such as `/how-to-play`.
+Import this repository as **one Vercel project**, with **Root Directory set to the repository root (`.`)**. Do not select `apps/web` or `apps/api`. Leave project-wide build/install/output overrides unset; [vercel.json](vercel.json) owns each service's settings.
 
-The API builds a wheel and source archive under `apps/api/dist/` and exposes the ASGI entry point `pillout_api.main:app`. It can be served by an ASGI-capable host independently of the frontend. Production API routing and hosting adapters will be added when the deployment platform is selected. The Vite `/api` proxy is for local development.
+The configuration uses [Vercel Services](https://vercel.com/docs/services), currently in beta. It builds the Vite site from `apps/web` and the FastAPI function from `apps/api` independently, then deploys both on the same domain. The web service invokes pnpm through Corepack to use the version pinned in root `package.json`; Python dependencies install from `apps/api/uv.lock` without development tools.
+
+Connect the Turso integration to this project in Vercel and enable it for the intended environments. Confirm that it provides both server-side variables:
+
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+
+Use a separate Turso database for Preview if previews should have isolated data. Keep these variables without a `VITE_` prefix so database credentials stay out of the browser bundle. After adding or changing integration variables, redeploy so the deployment receives them. The API applies the bundled `schema.sql` on startup with `CREATE TABLE IF NOT EXISTS`; this creates missing tables but is not a migration system for future schema changes.
+
+Production routing is defined in `vercel.json`: `/api/*`, `/docs`, `/redoc`, and `/openapi.json` go to FastAPI, while other paths go to the web service. Frontend deep links such as `/play` and `/how-to-play` serve `index.html`. Unknown API routes return API errors rather than the SPA. The Vite proxy remains for local development only; no production API hostname or CORS configuration is needed.
+
+After the first deployment, check `/api/health`, open `/docs`, and refresh a frontend deep link. A read-only `POST /api/drugs` with JSON body `{}` verifies database access. API operations currently have no authentication; the frontend does not write player details to them.
+
+Vercel's Git integration handles branch previews and production deployments; no additional deployment workflow or GitHub secrets are required. The existing GitHub Actions checks remain independent.
+
+### Web Analytics
+
+The web app includes `@vercel/analytics` for page views, including client-side navigation. In the Vercel project dashboard, open **Analytics** and select **Enable**, then redeploy. No client environment variables are required. Local development uses the SDK's development mode and does not send analytics data.
+
+After deployment, visit the app and navigate between routes, then confirm page views appear in the Analytics dashboard. See [Vercel's setup guide](https://vercel.com/docs/analytics/quickstart). Web Analytics measures traffic; it does not capture browser exceptions or stack traces. Server-side API errors remain available in Vercel runtime logs.
 
 Created in [T3 Code](https://t3.codes).

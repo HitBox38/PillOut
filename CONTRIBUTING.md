@@ -29,7 +29,7 @@ For example, use `diagnose` to investigate a reported bug, `animate` to add purp
 - Follow the project's designer for visual direction and implement their supplied designs.
 - Keep React UI, Pixi presentation, Zustand session state, and pure rules separate inside `apps/web`.
 - Keep Python runtime code in `apps/api/src/pillout_api` and Python dependencies in its `pyproject.toml` and `uv.lock`.
-- Keep the two apps independently buildable. Hosting and production routing will be decided separately.
+- Keep the two apps independently buildable. Root `vercel.json` deploys them together through Vercel Services; see the [deployment setup](README.md#deployment).
 - Use shadcn Base UI primitives for shared controls and TanStack Router for navigation.
 - Keep the game playable with keyboard input. Respect system and in-app reduced-motion preferences.
 - Test meaningful changes to rules and session behavior. Use the browser to verify visual changes and interactions.
