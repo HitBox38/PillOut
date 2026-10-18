@@ -55,7 +55,7 @@ The root orchestrates tasks with pnpm's built-in workspaces. JavaScript dependen
 - **API:** FastAPI, Pydantic, and Uvicorn, with pytest/HTTPX2 for tests, Ruff for lint and formatting, and mypy for type checking.
 - **Shared tooling:** pnpm, Oxlint, Oxfmt, contributor guidance, and personal skills.
 
-The pure game engine stays independent of React, Pixi, and Zustand. The store owns session lifecycle and scoring; the renderer consumes state and handles presentation and input. The API exposes health and database-backed user, drug, and avatar operations; player setup, game state, and scores remain local to the browser. Authentication and shared leaderboards are future decisions.
+The pure game engine stays independent of React, Pixi, and Zustand. The store owns session lifecycle and scoring; the renderer consumes state and handles presentation and input. Player setup loads medicine and avatar catalogs from the API and saves the player profile and selected avatar on Welcome submission. Patient details, medicine selections, schedules, game state, and scores remain local to the browser. The current player ID stays in memory, so refreshing starts new setup. Authentication and shared leaderboards are future decisions.
 
 See [web documentation](apps/web/README.md), [API documentation](apps/api/README.md), and [CONTEXT.md](CONTEXT.md) for details.
 

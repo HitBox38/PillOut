@@ -11,7 +11,9 @@ The API uses [Turso](https://turso.tech/) via the maintained `libsql` SDK. Remot
 - `TURSO_DATABASE_URL` — libSQL URL from the Turso dashboard (optional; defaults to the shared Pillout Turso database when unset)
 - `TURSO_AUTH_TOKEN` — database auth token (required for remote URLs; may be empty for local `file:` URLs)
 
-On startup the app applies `schema.sql` (`CREATE TABLE IF NOT EXISTS` …). A single database worker owns the SDK connection and serializes queries, with autocommit enabled so writes persist between requests. The async API handlers use the same query interface for remote Turso and local `file:` databases.
+On startup the app applies `schema.sql`, adds missing catalog-key and selected-avatar columns to older databases, and inserts missing built-in medicines and avatars. Unique `catalog_key` values identify web sprite frames independently of numeric database IDs; existing rows and catalog edits are preserved. Custom catalog rows without a supported key remain available through the API but do not appear in the web pickers.
+
+A single database worker owns the SDK connection and serializes queries, with autocommit enabled so writes persist between requests. The async API handlers use the same query interface for remote Turso and local `file:` databases.
 
 Copy `.env.example` to `.env`, set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, then run `pnpm run dev` (uvicorn loads `.env` via `--env-file`). For local SQLite without Turso:
 
@@ -33,7 +35,9 @@ uv run --locked uvicorn pillout_api.main:app --reload --port 8000
 - Interactive API docs: http://localhost:8000/docs
 - OpenAPI schema: http://localhost:8000/openapi.json
 
-The frontend dev server proxies `/api` to this service. The game currently keeps its session in the browser and does not require the API to play.
+The frontend dev server proxies `/api` to this service. Setup loads catalogs through `POST /api/drugs` and `POST /api/avatars` with `{}` bodies. Welcome creates or updates a player through `POST /api/user` or `PATCH /api/user`, including the selected `avatar_id`, and reads it back through `POST /api/get_user`. A selected avatar is a single profile choice; `user_avatars` associations remain separate. Legacy filename-based user requests still work.
+
+Patient details, medicine selections, and schedules are not saved by the frontend yet. The current player ID stays in browser memory; refreshing starts new setup rather than recovering an account. These endpoints do not implement authentication. The quick game keeps its session in the browser and does not require the API to play.
 
 ## Checks
 
@@ -58,4 +62,4 @@ uv run --locked --no-dev uvicorn pillout_api.main:app --host 0.0.0.0 --port 8000
 
 The database client is configured in `pillout_api.database` from `TURSO_*` environment variables. Root `vercel.json` selects `src.pillout_api.main:app` relative to this directory, installs runtime dependencies with `uv sync --locked --no-dev --no-install-project`, and includes `schema.sql` in the Python function. The app loads directly from the bundled source; package-relative imports keep it independent of editable-install paths from the build machine. The build command checks that this entry point imports without connecting to Turso. Routing sends `/api/*`, `/docs`, `/redoc`, and `/openapi.json` to this service without stripping their paths. The pnpm `build` wrapper still builds the independent Python distribution; Vercel packages the ASGI function directly.
 
-Authentication and shared game state remain outside this deployment setup. The frontend currently keeps player setup and gameplay in the browser.
+Authentication and shared game state remain outside this deployment setup. The frontend saves player profiles and selected avatars; patient plans and gameplay remain in the browser.

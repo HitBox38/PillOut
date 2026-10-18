@@ -7,14 +7,16 @@ CREATE TABLE IF NOT EXISTS users (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     nickname TEXT,
-    avatar_filename TEXT
+    avatar_filename TEXT,
+    avatar_id INTEGER REFERENCES avatars (id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS drugs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
-    asset_filename TEXT NOT NULL
+    asset_filename TEXT NOT NULL,
+    catalog_key TEXT
 );
 
 
@@ -33,7 +35,8 @@ CREATE INDEX IF NOT EXISTS idx_user_drugs_drug_id ON user_drugs (drug_id);
 CREATE TABLE IF NOT EXISTS avatars (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    filename TEXT NOT NULL
+    filename TEXT NOT NULL,
+    catalog_key TEXT
 );
 
 CREATE TABLE IF NOT EXISTS user_avatars (

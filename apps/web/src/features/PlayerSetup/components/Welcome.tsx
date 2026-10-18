@@ -2,17 +2,22 @@
 import { Check, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar } from './Avatar'
-import { AVATARS } from '../constants'
 import { usePlayerSetup } from '../hooks/usePlayerSetup'
+import { useWelcome } from '../hooks/useWelcome'
+import CatalogStatus from './CatalogStatus'
 
 export default function Welcome({ onNext }: { onNext: () => void }) {
-  const { name, surname, nickname, avatar, update } = usePlayerSetup()
+  const { name, surname, nickname, avatar, avatars, catalogStatus, saveStatus, saveError, update } =
+    usePlayerSetup()
+  const submit = useWelcome(onNext)
+  const saving = saveStatus === 'saving'
   return (
     <form
       className="setup-form welcome-form"
+      aria-busy={saving}
       onSubmit={(event) => {
         event.preventDefault()
-        onNext()
+        void submit()
       }}
     >
       <header className="setup-heading">
@@ -28,6 +33,7 @@ export default function Welcome({ onNext }: { onNext: () => void }) {
             value={name}
             maxLength={40}
             required
+            disabled={saving}
             onChange={(e) => update({ name: e.target.value })}
             pattern=".*\S.*"
           />
@@ -40,6 +46,7 @@ export default function Welcome({ onNext }: { onNext: () => void }) {
             value={surname}
             maxLength={40}
             required
+            disabled={saving}
             onChange={(e) => update({ surname: e.target.value })}
             pattern=".*\S.*"
           />
@@ -52,6 +59,7 @@ export default function Welcome({ onNext }: { onNext: () => void }) {
             value={nickname}
             maxLength={24}
             required
+            disabled={saving}
             onChange={(e) => update({ nickname: e.target.value })}
             pattern=".*\S.*"
             aria-describedby="nickname-help"
@@ -61,10 +69,10 @@ export default function Welcome({ onNext }: { onNext: () => void }) {
           Other players will see your nickname
         </p>
       </div>
-      <fieldset className="avatar-picker">
+      <fieldset className="avatar-picker" disabled={saving || catalogStatus !== 'ready'}>
         <legend>Choose your avatar</legend>
         <div className="avatar-grid">
-          {AVATARS.map((option) => (
+          {avatars.map((option) => (
             <Button
               key={option.id}
               type="button"
@@ -84,10 +92,16 @@ export default function Welcome({ onNext }: { onNext: () => void }) {
         </div>
       </fieldset>
       <div className="setup-footer">
-        <Button type="submit" className="candy-button">
-          Let’s add your pill plan <ChevronRight />
+        <CatalogStatus />
+        {saveError && <p role="alert">{saveError}</p>}
+        <Button
+          type="submit"
+          className="candy-button"
+          disabled={saving || catalogStatus !== 'ready'}
+        >
+          {saving ? 'Saving your player…' : 'Save player & continue'} <ChevronRight />
         </Button>
-        <span className="footer-caption">A little play. A little brighter day.</span>
+        <span className="footer-caption">Your player details and avatar will be saved.</span>
       </div>
     </form>
   )

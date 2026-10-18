@@ -2,14 +2,21 @@ import { useState } from 'react'
 import { Check, ChevronRight, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Artwork } from '@/components/artwork'
-import { PILLS } from '../constants'
 import { usePlayerSetup } from '../hooks/usePlayerSetup'
 import { usePillPagination } from '../hooks/usePillPagination'
+import CatalogStatus from './CatalogStatus'
 
 export default function PillSelection({ onNext }: { onNext: () => void }) {
   const [search, setSearch] = useState('')
-  const { patientName, selectedPills, togglePill, update } = usePlayerSetup()
-  const pills = PILLS.filter((pill) =>
+  const {
+    patientName,
+    selectedPills,
+    pills: catalog,
+    catalogStatus,
+    togglePill,
+    update,
+  } = usePlayerSetup()
+  const pills = catalog.filter((pill) =>
     pill.name.toLowerCase().includes(search.toLowerCase().trim()),
   )
   const { viewport, page, pageSize, pageCount, goToPage, onScroll } = usePillPagination(
@@ -50,6 +57,7 @@ export default function PillSelection({ onNext }: { onNext: () => void }) {
           onChange={(e) => setSearch(e.target.value)}
         />
       </label>
+      <CatalogStatus />
       <fieldset className="pill-picker">
         <legend className="sr-only">Pills for the patient</legend>
         <section
@@ -93,7 +101,7 @@ export default function PillSelection({ onNext }: { onNext: () => void }) {
                   )}
                 </Button>
               ))}
-              {pills.length === 0 && (
+              {pills.length === 0 && catalogStatus === 'ready' && (
                 <output className="empty-search">No pills found. Try another name.</output>
               )}
             </fieldset>
@@ -129,10 +137,16 @@ export default function PillSelection({ onNext }: { onNext: () => void }) {
           : 'Select the pills in your patient’s plan'}
       </output>
       <div className="setup-footer">
-        <Button type="submit" className="candy-button" disabled={selectedPills.length === 0}>
+        <Button
+          type="submit"
+          className="candy-button"
+          disabled={selectedPills.length === 0 || catalogStatus !== 'ready'}
+        >
           Next: times & quantities <ChevronRight />
         </Button>
-        <span className="footer-caption">Demo only · Nothing is sent or saved</span>
+        <span className="footer-caption">
+          Demo only · Patient details and pill choices stay here
+        </span>
       </div>
     </form>
   )

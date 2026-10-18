@@ -15,7 +15,9 @@ Open http://localhost:5173. To run both apps, use `pnpm run dev` after installin
 
 The Vite dev server forwards `/api` requests to http://127.0.0.1:8000. With the API running, http://localhost:5173/api/health exercises that connection. To use another backend locally, copy `.env.example` to `.env.local` and set `API_PROXY_TARGET` there. This variable configures the dev server and is not exposed to the client bundle.
 
-The game currently runs independently of the API. Production API routing will be configured when hosting is chosen.
+Player setup loads medicine and avatar catalogs from the API. Submitting Welcome saves the player profile and chosen avatar, reads the saved profile back, and advances only after success. Failed requests preserve the form and can be retried. Returning to Welcome and saving updates the same player during that browser session. The player ID is not stored on the device, so refreshing starts new setup; account recovery and authentication are not implemented.
+
+Patient details, selected medicines, and schedules remain local demo data. The quick game runs independently of the API. Production API routing will be configured when hosting is chosen.
 
 ## Commands
 
