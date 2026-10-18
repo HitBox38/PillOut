@@ -4,14 +4,15 @@ Use the shared [agent guidance](AGENTS.md) and [skill catalog](docs/skills.md) a
 
 ## Start here
 
-Read [CONTEXT.md](CONTEXT.md) for the game vocabulary and architectural boundaries. Install the pnpm version pinned in `package.json`, then run:
+Read [CONTEXT.md](CONTEXT.md) for the game vocabulary and architectural boundaries. Install the pnpm version pinned in `package.json`, Python 3.12 or newer, and uv 0.9.27 or newer, then run:
 
 ```sh
 pnpm install --frozen-lockfile
+uv sync --project apps/api --locked
 pnpm run dev
 ```
 
-The app runs at http://localhost:5173. It needs no environment variables or backend service.
+The web app runs at http://localhost:5173 and the FastAPI service at http://localhost:8000. No environment variables are required for local defaults. Use `pnpm run dev:web` or `pnpm run dev:api` to start one app; the game can be played independently of the API.
 
 ## Choose a workflow
 
@@ -26,7 +27,9 @@ For example, use `diagnose` to investigate a reported bug, `animate` to add purp
 
 - Design for a narrow touch screen first, then enhance the tablet and desktop layouts.
 - Follow the project's designer for visual direction and implement their supplied designs.
-- Keep React UI, Pixi presentation, Zustand session state, and pure rules separate.
+- Keep React UI, Pixi presentation, Zustand session state, and pure rules separate inside `apps/web`.
+- Keep Python runtime code in `apps/api/src/pillout_api` and Python dependencies in its `pyproject.toml` and `uv.lock`.
+- Keep the two apps independently buildable. Hosting and production routing will be decided separately.
 - Use shadcn Base UI primitives for shared controls and TanStack Router for navigation.
 - Keep the game playable with keyboard input. Respect system and in-app reduced-motion preferences.
 - Test meaningful changes to rules and session behavior. Use the browser to verify visual changes and interactions.
@@ -42,9 +45,9 @@ pnpm test
 pnpm run build
 ```
 
-Use `pnpm run lint:fix` for safe lint fixes and `pnpm run format` for formatting. Imported skill files are excluded from these tools to preserve their original contents. Documentation-only changes need the formatting and link checks relevant to the edit; runtime changes need the applicable tests and build.
+Root checks cover both apps. Use `pnpm run lint:fix` for safe lint fixes and `pnpm run format` for Oxfmt and Ruff formatting. Imported skill files are excluded from these tools to preserve their original contents. Documentation-only changes need the formatting and link checks relevant to the edit; runtime changes need the applicable tests and build.
 
-For UI work, check mobile and desktop layouts and exercise the changed interaction. Describe the resulting behavior and validation in your pull request. GitHub Actions checks lint, formatting, tests, and the production build.
+For UI work, check mobile and desktop layouts and exercise the changed interaction. Describe the resulting behavior and validation in your pull request. GitHub Actions has separate web and API jobs that check lint, formatting, types, tests, and their builds.
 
 ## Skill changes
 

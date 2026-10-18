@@ -1,0 +1,34 @@
+[project]
+name = "pillout-api"
+version = "0.1.0"
+description = "Pillout's independently deployable Python API"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["fastapi>=0.143.5", "pydantic>=2.14.1", "uvicorn>=0.54.0"]
+
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pillout_api"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[tool.uv]
+required-version = ">=0.9.27"
+
+[dependency-groups]
+dev = ["httpx2>=2.13.1", "mypy>=2.4.0", "pytest>=9.1.1", "ruff>=0.17.1"]

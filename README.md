@@ -1,60 +1,79 @@
-<img src="assets/icon.svg" width="64" height="64" alt="Pillout">
+<img src="apps/web/assets/icon.svg" width="64" height="64" alt="Pillout">
 
 # Pillout
 
-A mobile-first match-three pill game. Swap colorful capsules, follow the cascades, and find your flow.
+A mobile-first match-three pill game in a monorepo with a React frontend and a Python FastAPI backend. The apps can be built and deployed independently; hosting will be chosen later.
 
 ## Run locally
 
-Requires Node.js 22.12 or newer and pnpm 10.28.1 (pinned in `package.json`). No environment variables or external services are required.
+Requires Node.js 22.12 or newer, pnpm 10.28.1 (pinned in `package.json`), Python 3.12 or newer, and uv 0.9.27 or newer. API development and CI use Python 3.13, pinned in `apps/api/.python-version`.
 
 ```sh
 pnpm install --frozen-lockfile
+uv sync --project apps/api --locked
 pnpm run dev
 ```
 
-Open http://localhost:5173. To check or build the project:
+- Game: http://localhost:5173
+- API health: http://localhost:8000/api/health
+- API docs: http://localhost:8000/docs
+- API health through the frontend dev proxy: http://localhost:5173/api/health
+
+`pnpm run dev` starts both apps with reload support. Use `pnpm run dev:web` or `pnpm run dev:api` to start one app. The game remains playable without the backend.
+
+No environment variables are required for the defaults. To change the local API proxy target, copy `apps/web/.env.example` to `apps/web/.env.local` and set `API_PROXY_TARGET`.
+
+## Repository layout
+
+```text
+apps/
+  web/                      React + TypeScript application (@pillout/web)
+    src/                    Game engine, Zustand store, Pixi board, and UI
+    assets/                 Application assets
+    components.json         shadcn Base UI configuration
+    vite.config.ts          Frontend build and local /api proxy
+    tsconfig.json           App TypeScript configuration
+    package.json            Frontend dependencies and commands
+  api/                      Python FastAPI service (@pillout/api command wrapper)
+    src/pillout_api/         Importable ASGI application
+    tests/                  HTTP contract tests
+    pyproject.toml          Python package, dependencies, and tool configuration
+    uv.lock                 Locked Python dependencies
+    package.json            pnpm command wrappers for uv
+docs/                      Skill catalog and provenance
+.agents/skills/             Shared personal skill snapshot
+pnpm-workspace.yaml         Application workspace membership
+pnpm-lock.yaml              Locked JavaScript dependencies
+package.json                Shared commands and Oxc tools
+```
+
+The root orchestrates tasks with pnpm's built-in workspaces. JavaScript dependencies belong to `apps/web`; Python dependencies belong to `apps/api` and are managed by uv. The API's `package.json` is a command bridge, so the Python service can also run directly with uv without Node.js. Shared packages can be added when there is code that actually needs sharing.
+
+## Stack and boundaries
+
+- **Web:** React 19, TypeScript 7, Vite, PixiJS 8, Zustand 5, shadcn **Base UI**, TanStack Router, Tailwind CSS 4, and Vitest.
+- **API:** FastAPI, Pydantic, and Uvicorn, with pytest/HTTPX2 for tests, Ruff for lint and formatting, and mypy for type checking.
+- **Shared tooling:** pnpm, Oxlint, Oxfmt, contributor guidance, and personal skills.
+
+The pure game engine stays independent of React, Pixi, and Zustand. The store owns session lifecycle and scoring; the renderer consumes state and handles presentation and input. The API currently exposes a health endpoint; game state and scores remain local to the browser. Accounts, persistence, shared leaderboards, and production deployment are future decisions.
+
+See [web documentation](apps/web/README.md), [API documentation](apps/api/README.md), and [CONTEXT.md](CONTEXT.md) for details.
+
+## Checks
+
+From the root, these commands cover both applications:
 
 ```sh
-pnpm test
 pnpm run lint
 pnpm run format:check
 pnpm run typecheck
+pnpm test
 pnpm run build
-pnpm run preview
 ```
 
-## Stack
+`pnpm run format` runs Oxfmt and Ruff formatting. `pnpm run lint:fix` applies their safe fixes. To target one application, use `pnpm --filter @pillout/web run <command>` or `pnpm --filter @pillout/api run <command>`; Oxc checks run from the root with `pnpm exec oxlint --max-warnings 0 .` and `pnpm exec oxfmt --check .`.
 
-- React 19 and TypeScript 7, built with Vite.
-- PixiJS 8 renders the board and capsule animations, loaded separately from the UI.
-- Zustand 5 owns the game session and persists preferences and the personal best locally.
-- shadcn/ui **Base UI** components: buttons, dialogs, switches, tabs, and progress.
-- TanStack Router provides typed navigation for `/` and `/how-to-play`.
-- Tailwind CSS 4, locally hosted fonts, and Lucide icons.
-- Oxlint checks TypeScript, React, accessibility, and test correctness. Oxfmt handles formatting.
-- Vitest covers the game rules and asynchronous session behavior. GitHub Actions runs lint, formatting checks, tests, and the production build.
-
-## Structure
-
-```text
-src/
-  App.tsx                   App shell and typed route tree
-  pages/game-page.tsx       Game screen, controls, and session UI
-  game/
-    engine.ts               Pure rules: generation, swaps, matches, gravity, legal moves
-    store.ts                Session lifecycle, scoring, cascades, settings, persistence
-    audio.ts                Optional Web Audio match tones
-    *.test.ts               Rules and session regression tests
-  components/
-    game-board.tsx          Pixi lifecycle, interpolation, pointer and keyboard input
-    ui/                     Owned shadcn Base UI components
-  styles/app.css            Mobile layout and progressive min-width breakpoints
-  index.css                 Theme tokens and Tailwind configuration
-  lib/utils.ts              Class name utilities
-```
-
-The engine has no dependency on React, Pixi, or Zustand. The store resolves each move through swap, clear, and fall phases; session IDs prevent an old animation from modifying a restarted game. The renderer observes state and handles presentation only. A semantic HTML grid over the canvas supports keyboard navigation and screen readers; a CSS board remains playable if WebGL initialization fails.
+CI has independent web and API jobs. The web job checks Oxc, types, tests, and its static build. The API job installs from `uv.lock`, checks Ruff and mypy, runs HTTP tests, and builds the Python distribution.
 
 ## Gameplay
 
@@ -62,27 +81,11 @@ The engine has no dependency on React, Pixi, or Zustand. The store resolves each
 - **Zen:** play without a move limit or an ending score.
 - Swap adjacent pills with two taps/clicks or a swipe. Invalid swaps revert without costing a move.
 - Match at least three of one color horizontally or vertically. Each cleared pill earns 50 points, multiplied by the cascade number.
-- Hints and shuffles are free. Boards start without matches and always have a legal move; dead boards are automatically replaced.
+- Hints and shuffles are free. Dead boards are replaced automatically.
 - Arrow keys move focus; Enter or Space selects; Escape clears the selection.
 - Sound and reduced motion can be changed in settings. The renderer also respects the system reduced-motion preference.
 
-Scores and preferences live on the current device. Active rounds are kept in memory while navigating between routes; refreshing starts a fresh round. There is no backend or shared leaderboard yet.
-
-## UI components
-
-`components.json` uses shadcn's `base-nova` style, backed by `@base-ui/react`. Add more components with:
-
-```sh
-pnpm dlx shadcn@latest add <component>
-```
-
-Shared styles and class utilities are stored locally; the shadcn CLI is not a runtime dependency.
-
-## Code quality
-
-Run `pnpm run lint` for Oxlint or `pnpm run lint:fix` to apply safe fixes. Its configuration is in `.oxlintrc.json`.
-
-Run `pnpm run format` to format with Oxfmt, or `pnpm run format:check` for a read-only check. `.oxfmtrc.json` keeps the project's single quotes, no semicolons, and 100-column formatting, and ignores generated output and the pnpm lockfile.
+Preferences and personal best are saved on the current device. Active rounds stay in memory across frontend route navigation; refreshing starts a fresh round.
 
 ## Contributor playbook
 
@@ -90,6 +93,8 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), and [CONTEXT.md
 
 ## Deployment
 
-`pnpm run build` writes a static site to `dist/`. Configure your host to serve `index.html` for unknown paths so direct navigation to `/how-to-play` works. The app currently assumes deployment at the domain root.
+The web build is a static site under `apps/web/dist/`. Its host must serve `index.html` for frontend routes such as `/how-to-play`.
+
+The API builds a wheel and source archive under `apps/api/dist/` and exposes the ASGI entry point `pillout_api.main:app`. It can be served by an ASGI-capable host independently of the frontend. Production API routing and hosting adapters will be added when the deployment platform is selected. The Vite `/api` proxy is for local development.
 
 Created in [T3 Code](https://t3.codes).

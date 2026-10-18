@@ -8,7 +8,12 @@
   "ignorePatterns": [
     "node_modules",
     "dist",
+    ".venv",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".mypy_cache",
     "pnpm-lock.yaml",
+    "uv.lock",
     ".agents/skills/**",
     ".claude/skills/**"
   ]

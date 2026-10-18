@@ -1,0 +1,15 @@
+{
+  "name": "@pillout/api",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "uv run --locked uvicorn pillout_api.main:app --reload --host 127.0.0.1 --port 8000",
+    "build": "uv build",
+    "test": "uv run --locked pytest",
+    "typecheck": "uv run --locked mypy src",
+    "lint": "uv run --locked ruff check .",
+    "lint:fix": "uv run --locked ruff check --fix .",
+    "format": "uv run --locked ruff format .",
+    "format:check": "uv run --locked ruff format --check ."
+  }
+}

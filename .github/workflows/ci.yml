@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  verify:
+  web:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -19,7 +19,28 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run lint
-      - run: pnpm run format:check
-      - run: pnpm test
-      - run: pnpm run build
+      - run: pnpm exec oxlint --max-warnings 0 .
+      - run: pnpm exec oxfmt --check .
+      - run: pnpm --filter @pillout/web run typecheck
+      - run: pnpm --filter @pillout/web test
+      - run: pnpm --filter @pillout/web run build
+
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v9
+        with:
+          version: '0.9.27'
+          enable-cache: true
+          cache-dependency-glob: apps/api/uv.lock
+      - run: uv python install
+      - run: uv sync --locked
+      - run: uv run --locked ruff check .
+      - run: uv run --locked ruff format --check .
+      - run: uv run --locked mypy src
+      - run: uv run --locked pytest
+      - run: uv build
