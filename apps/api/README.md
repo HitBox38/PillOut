@@ -20,7 +20,7 @@ export TURSO_DATABASE_URL="file:./data/pillout.db"
 export TURSO_AUTH_TOKEN=""
 ```
 
-On Vercel, add the same variables in the project environment settings.
+On Vercel, connect the Turso integration and confirm it supplies both variables for the intended deployment environments. See the root [deployment setup](../../README.md#deployment). Redeploy after connecting the integration or changing its variables.
 
 From this directory:
 
@@ -56,4 +56,6 @@ uv sync --locked --no-dev
 uv run --locked --no-dev uvicorn pillout_api.main:app --host 0.0.0.0 --port 8000
 ```
 
-The database client is configured in `pillout_api.database` from `TURSO_*` environment variables. Hosting, production routing, authentication, and shared game state remain deployment concerns outside this package.
+The database client is configured in `pillout_api.database` from `TURSO_*` environment variables. Root `vercel.json` selects `src.pillout_api.main:app` relative to this directory, installs runtime dependencies with `uv sync --locked --no-dev --no-install-project`, and includes `schema.sql` in the Python function. The app loads directly from the bundled source; package-relative imports keep it independent of editable-install paths from the build machine. The build command checks that this entry point imports without connecting to Turso. Routing sends `/api/*`, `/docs`, `/redoc`, and `/openapi.json` to this service without stripping their paths. The pnpm `build` wrapper still builds the independent Python distribution; Vercel packages the ASGI function directly.
+
+Authentication and shared game state remain outside this deployment setup. The frontend currently keeps player setup and gameplay in the browser.

@@ -43,6 +43,6 @@ Preferences and personal best persist on the current device. Active rounds stay 
 - `apps/api/pyproject.toml` and `apps/api/uv.lock`: independent Python dependencies, packaging, and quality tools.
 - Root `package.json` and `pnpm-workspace.yaml`: pnpm task orchestration for both apps. The API package wrapper calls uv; it does not manage Python dependencies.
 
-The web dev server proxies `/api` to the local API on port 8000. The web and API can be built and run independently. Production hosting and routing remain undecided.
+The web dev server proxies `/api` to the local API on port 8000. The web and API can be built and run independently. Root `vercel.json` deploys both through Vercel Services on one domain: `/api/*` and the API documentation routes go to FastAPI; other paths go to the Vite SPA with a deep-link fallback. The API reads `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` supplied by the project's Vercel Turso integration. Player setup and gameplay remain local to the browser.
 
 The engine remains independent of React, Pixi, and Zustand. Presentation consumes session state rather than implementing another rules engine. New features should respect these boundaries while following the feature-folder guidance where applicable.
