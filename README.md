@@ -110,4 +110,10 @@ After the first deployment, check `/api/health`, open `/docs`, and refresh a fro
 
 Vercel's Git integration handles branch previews and production deployments; no additional deployment workflow or GitHub secrets are required. The existing GitHub Actions checks remain independent.
 
+### Web Analytics
+
+The web app includes `@vercel/analytics` for page views, including client-side navigation. In the Vercel project dashboard, open **Analytics** and select **Enable**, then redeploy. No client environment variables are required. Local development uses the SDK's development mode and does not send analytics data.
+
+After deployment, visit the app and navigate between routes, then confirm page views appear in the Analytics dashboard. See [Vercel's setup guide](https://vercel.com/docs/analytics/quickstart). Web Analytics measures traffic; it does not capture browser exceptions or stack traces. Server-side API errors remain available in Vercel runtime logs.
+
 Created in [T3 Code](https://t3.codes).
