@@ -1,52 +1,33 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- The interactive ARIA grid uses rows and gridcells for keyboard navigation, not a data table. */
 import { useEffect, useRef, useState } from 'react'
-import { Application, Container, Graphics } from 'pixi.js'
+import { Application, Assets, Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js'
 import { SIZE } from '@/game/engine'
-import type { Kind, Pill } from '@/game/engine'
+import type { Pill } from '@/game/engine'
 import { useGameStore } from '@/game/store'
+import { Artwork } from '@/components/artwork'
+import { ART_SOURCES, TILE_ART, SPECIAL_ART, getTileArt } from '@/lib/art-assets'
+import type { Kind, Special } from '@/game/engine'
 
 const CELL = 64
 const WIDTH = CELL * SIZE
-const COLORS: Record<Kind, { main: number; light: number; dark: number }> = {
-  coral: { main: 0xf47865, light: 0xffc3ac, dark: 0xbd4a45 },
-  mint: { main: 0x66bda3, light: 0xb9e3bd, dark: 0x3d8a76 },
-  gold: { main: 0xf1c554, light: 0xffeaa0, dark: 0xbf9130 },
-  lavender: { main: 0xa390d1, light: 0xdbceef, dark: 0x7560a8 },
-  blue: { main: 0x76acd4, light: 0xc4dfec, dark: 0x4c82ab },
-}
+type TileTextures = Record<Kind | Special, Texture>
 
-function makePill(pill: Pill) {
+function makePill(pill: Pill, textures: TileTextures) {
   const view = new Container()
-  const body = new Container()
-  const colors = COLORS[pill.kind]
-  body.rotation = -Math.PI / 4
-  body.addChild(
-    new Graphics().roundRect(-23, -11, 46, 26, 13).fill({ color: 0x333831, alpha: 0.12 }),
-  )
-  body.addChild(new Graphics().roundRect(-23, -14, 46, 27, 13.5).fill(colors.dark))
-  body.addChild(new Graphics().roundRect(-23, -15, 46, 26, 13).fill(colors.main))
-  // A rounded end and square seam give the capsule two distinct halves.
-  body.addChild(
-    new Graphics()
-      .roundRect(-23, -15, 26, 26, 13)
-      .fill(colors.light)
-      .rect(-10, -15, 10, 26)
-      .fill(colors.light),
-  )
-  body.addChild(
-    new Graphics()
-      .moveTo(0, -14)
-      .lineTo(0, 10)
-      .stroke({ color: colors.dark, alpha: 0.18, width: 1 }),
-  )
-  body.addChild(
-    new Graphics().roundRect(-13, -11, 22, 3, 1.5).fill({ color: 0xffffff, alpha: 0.42 }),
-  )
-  const ring = new Graphics()
-    .roundRect(-28, -28, 56, 56, 15)
-    .stroke({ color: 0x476a52, width: 2.4 })
+  const texture = textures[pill.special ?? pill.kind]
+  const body = new Sprite(texture)
+  body.anchor.set(0.5)
+  body.scale.set((CELL - 10) / Math.max(texture.width, texture.height))
+  const ring = new Graphics().roundRect(-30, -30, 60, 60, 10).stroke({ color: 0x00ffff, width: 3 })
   ring.visible = false
-  view.addChild(ring, body)
+  if (pill.special)
+    view.addChild(
+      new Graphics()
+        .roundRect(-29, -29, 58, 58, 12)
+        .fill({ color: 0xffd62b, alpha: 0.18 })
+        .stroke({ color: 0xffe46c, width: 1.5, alpha: 0.8 }),
+    )
+  view.addChild(body, ring)
   return { view, ring }
 }
 
@@ -73,6 +54,29 @@ export function GameBoard() {
     >()
     async function init() {
       try {
+        const artwork = { ...TILE_ART, ...SPECIAL_ART }
+        const sources = [...new Set(Object.values(artwork).map((art) => art.source))]
+        const loaded = new Map(
+          await Promise.all(
+            sources.map(
+              async (source) =>
+                [source, await Assets.load<Texture>(ART_SOURCES[source].src)] as const,
+            ),
+          ),
+        )
+        const textures = Object.fromEntries(
+          Object.entries(artwork).map(([kind, art]) => {
+            const [x, y, width, height] = art.crop
+            return [
+              kind,
+              new Texture({
+                source: loaded.get(art.source)!.source,
+                frame: new Rectangle(x, y, width, height),
+              }),
+            ]
+          }),
+        ) as TileTextures
+        if (disposed) return
         await app.init({
           width: WIDTH,
           height: WIDTH,
@@ -92,7 +96,7 @@ export function GameBoard() {
           for (let col = 0; col < SIZE; col++) {
             grid
               .roundRect(col * CELL + 2, row * CELL + 2, CELL - 4, CELL - 4, 14)
-              .fill({ color: (row + col) % 2 === 0 ? 0xeceee4 : 0xe4e8dc, alpha: 0.85 })
+              .fill({ color: (row + col) % 2 === 0 ? 0x9eb8ff : 0x8fa7fa, alpha: 0.85 })
           }
         }
         app.stage.addChild(grid)
@@ -110,10 +114,14 @@ export function GameBoard() {
             const y = Math.floor(index / SIZE) * CELL + CELL / 2
             let node = nodes.get(pill.id)
             if (!node) {
-              node = { ...makePill(pill), targetX: x, targetY: y, clearing: false }
+              node = { ...makePill(pill, textures), targetX: x, targetY: y, clearing: false }
               node.view.position.set(
                 x,
-                state.phase === 'falling' && !state.reducedMotion ? y - WIDTH : y,
+                state.phase === 'falling' &&
+                  !state.reducedMotion &&
+                  !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                  ? y - WIDTH
+                  : y,
               )
               nodes.set(pill.id, node)
               app.stage.addChild(node.view)
@@ -168,13 +176,15 @@ export function GameBoard() {
           <div role="row" className="board-row" key={row}>
             {board.slice(row * SIZE, row * SIZE + SIZE).map((pill, col) => {
               const index = row * SIZE + col
+              const art = getTileArt(pill)
               return (
                 <div role="gridcell" key={index} aria-selected={selected === index}>
                   <button
                     type="button"
                     tabIndex={focusIndex === index ? 0 : -1}
-                    aria-label={`${pill.kind} pill, row ${row + 1}, column ${col + 1}${hint?.includes(index) ? ', hint' : ''}`}
+                    aria-label={`${art.label}, row ${row + 1}, column ${col + 1}${hint?.includes(index) ? ', hint' : ''}`}
                     aria-pressed={selected === index}
+                    aria-describedby={pill.special ? 'special-tile-help' : undefined}
                     aria-disabled={disabled}
                     data-hint={hint?.includes(index) || undefined}
                     onFocus={() => setFocusIndex(index)}
@@ -228,7 +238,7 @@ export function GameBoard() {
                         useGameStore.setState({ selected: null, hint: null })
                     }}
                   >
-                    {error && <span className={`pill pill-${pill.kind}`} />}
+                    {error && <Artwork source={art.source} crop={art.crop} />}
                   </button>
                 </div>
               )

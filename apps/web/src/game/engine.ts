@@ -1,15 +1,20 @@
+import { MEDICINE_IDS } from './medicines'
+
 export const SIZE = 8
-export const KINDS = ['coral', 'mint', 'gold', 'lavender', 'blue'] as const
+export const FRUIT_KINDS = ['mint', 'gold', 'lavender'] as const
+export const KINDS = [...FRUIT_KINDS, ...MEDICINE_IDS] as const
 export type Kind = (typeof KINDS)[number]
-export type Pill = { id: string; kind: Kind }
+export type Special = 'bomb' | 'hammer' | 'crown'
+export type Axis = 'row' | 'column'
+export type Pill = { id: string; kind: Kind; special?: Special; axis?: Axis }
 export type Board = Pill[]
 export type Move = readonly [number, number]
 export type Random = () => number
 
 let nextId = 0
-const pill = (random: Random): Pill => ({
+const pill = (random: Random, kinds: readonly Kind[]): Pill => ({
   id: `pill-${nextId++}`,
-  kind: KINDS[Math.floor(random() * KINDS.length)]!,
+  kind: kinds[Math.floor(random() * kinds.length)]!,
 })
 
 export function adjacent(a: number, b: number): boolean {
@@ -28,41 +33,184 @@ export function swap(board: Board, a: number, b: number): Board {
   return result
 }
 
-/** Union of horizontal and vertical runs; intersections score only once. */
-export function findMatches(board: Board): number[] {
-  const matched = new Set<number>()
-  for (let row = 0; row < SIZE; row++) {
-    for (let col = 0; col < SIZE; col++) {
-      const index = row * SIZE + col
-      for (const step of [1, SIZE]) {
-        if ((step === 1 && col > SIZE - 3) || (step === SIZE && row > SIZE - 3)) continue
-        const run = [index]
-        for (
-          let n = index + step;
-          n < board.length && (step === SIZE || Math.floor(n / SIZE) === row);
-          n += step
-        ) {
-          if (board[n]?.kind !== board[index]?.kind) break
-          run.push(n)
-        }
-        if (run.length >= 3) run.forEach((n) => matched.add(n))
+interface Run {
+  indices: number[]
+  axis: Axis
+}
+
+/** Specials activate by swapping; their hidden base kind never participates in matches. */
+function findRuns(board: Board): Run[] {
+  const runs: Run[] = []
+  for (let index = 0; index < board.length; index++) {
+    const tile = board[index]!
+    if (tile.special) continue
+    for (const step of [1, SIZE]) {
+      const previous = index - step
+      if (
+        previous >= 0 &&
+        (step === SIZE || index % SIZE !== 0) &&
+        !board[previous]!.special &&
+        board[previous]!.kind === tile.kind
+      )
+        continue
+      const indices = [index]
+      for (
+        let next = index + step;
+        next < board.length &&
+        (step === SIZE || Math.floor(next / SIZE) === Math.floor(index / SIZE));
+        next += step
+      ) {
+        if (board[next]!.special || board[next]!.kind !== tile.kind) break
+        indices.push(next)
       }
+      if (indices.length >= 3) runs.push({ indices, axis: step === 1 ? 'row' : 'column' })
     }
   }
-  return [...matched]
+  return runs
+}
+
+/** Union of horizontal or vertical runs; each position appears once. */
+export function findMatches(board: Board): number[] {
+  return [...new Set(findRuns(board).flatMap((run) => run.indices))]
 }
 
 export function findMove(board: Board): Move | null {
   for (let i = 0; i < board.length; i++) {
     for (const j of [i + 1, i + SIZE]) {
-      if (adjacent(i, j) && findMatches(swap(board, i, j)).length) return [i, j]
+      if (
+        adjacent(i, j) &&
+        (board[i]!.special || board[j]!.special || findMatches(swap(board, i, j)).length)
+      )
+        return [i, j]
     }
   }
   return null
 }
 
+export interface Resolution {
+  board: Board
+  clearing: number[]
+  created: number[]
+  activated: Special[]
+}
+
+/** Resolve one wave on an already-swapped board, without gravity or random refills. */
+export function resolveBoard(board: Board, move?: Move): Resolution {
+  const result: Resolution = { board: [...board], clearing: [], created: [], activated: [] }
+  if (move && !adjacent(...move)) return result
+  const runs = findRuns(board)
+  const clearing = new Set(runs.flatMap((run) => run.indices))
+  const remaining = new Set(runs)
+  const protectedTiles = new Set<number>()
+  // Intersecting runs form one match and earn at most one special: crown, bomb, hammer.
+  while (remaining.size) {
+    const group: Run[] = [remaining.values().next().value!]
+    remaining.delete(group[0]!)
+    const cells = new Set(group[0]!.indices)
+    for (let i = 0; i < group.length; i++) {
+      for (const run of remaining) {
+        if (!run.indices.some((index) => cells.has(index))) continue
+        group.push(run)
+        run.indices.forEach((index) => cells.add(index))
+        remaining.delete(run)
+      }
+    }
+    const longest = group.reduce((best, run) =>
+      run.indices.length > best.indices.length ? run : best,
+    )
+    const special: Special | undefined =
+      longest.indices.length >= 5
+        ? 'crown'
+        : group.some((run) => run.axis !== longest.axis)
+          ? 'bomb'
+          : longest.indices.length === 4
+            ? 'hammer'
+            : undefined
+    if (!special) continue
+    const intersection = longest.indices.find((index) =>
+      group.some((run) => run !== longest && run.indices.includes(index)),
+    )
+    const index =
+      move && cells.has(move[1])
+        ? move[1]
+        : move && cells.has(move[0])
+          ? move[0]
+          : (intersection ?? longest.indices[Math.floor(longest.indices.length / 2)]!)
+    result.board[index] = {
+      ...board[index]!,
+      id: `special-${nextId++}`,
+      special,
+      ...(special === 'hammer' ? { axis: longest.axis } : {}),
+    }
+    result.created.push(index)
+    clearing.delete(index)
+    protectedTiles.add(index)
+  }
+
+  const activated = new Set<number>()
+  const queue: { index: number; axis?: Axis; target?: Kind; wholeBoard?: boolean }[] = []
+  const add = (index: number) => {
+    if (protectedTiles.has(index)) return
+    clearing.add(index)
+    if (result.board[index]!.special && !activated.has(index)) queue.push({ index })
+  }
+  if (move) {
+    const axis: Axis = Math.abs(move[0] - move[1]) === 1 ? 'row' : 'column'
+    for (const index of move) {
+      if (!board[index]!.special) continue
+      const other = board[index === move[0] ? move[1] : move[0]]!
+      queue.push({
+        index,
+        axis,
+        target: other.special ? undefined : other.kind,
+        wholeBoard: board[index]!.special === 'crown' && other.special === 'crown',
+      })
+    }
+  }
+  for (let cursor = 0; cursor < queue.length; cursor++) {
+    const activation = queue[cursor]!
+    const { index } = activation
+    if (activated.has(index)) continue
+    activated.add(index)
+    clearing.add(index)
+    const tile = result.board[index]!
+    const special = tile.special!
+    result.activated.push(special)
+    const row = Math.floor(index / SIZE)
+    const col = index % SIZE
+    if (activation.wholeBoard) {
+      for (let cell = 0; cell < board.length; cell++) add(cell)
+    } else if (special === 'bomb') {
+      for (let r = Math.max(0, row - 1); r <= Math.min(SIZE - 1, row + 1); r++)
+        for (let c = Math.max(0, col - 1); c <= Math.min(SIZE - 1, col + 1); c++) add(r * SIZE + c)
+    } else if (special === 'hammer') {
+      const axis = activation.axis ?? tile.axis ?? 'row'
+      for (let offset = 0; offset < SIZE; offset++)
+        add(axis === 'row' ? row * SIZE + offset : offset * SIZE + col)
+    } else {
+      // A crown hit by another effect targets the most common regular type; ties use KINDS order.
+      const counts = KINDS.map((kind) => ({
+        kind,
+        count: board.filter((cell) => !cell.special && cell.kind === kind).length,
+      }))
+      const target =
+        activation.target ??
+        counts.reduce((best, entry) => (entry.count > best.count ? entry : best)).kind
+      result.board.forEach((cell, i) => {
+        if (!cell.special && cell.kind === target) add(i)
+      })
+    }
+  }
+  result.clearing = [...clearing].sort((a, b) => a - b)
+  return result
+}
+
 /** No free opening matches, and at least one legal move. */
-export function createBoard(random: Random = Math.random): Board {
+export function createBoard(
+  random: Random = Math.random,
+  kinds: readonly Kind[] = FRUIT_KINDS,
+): Board {
+  if (new Set(kinds).size < 3) throw new RangeError('A board needs at least three tile kinds')
   for (let attempt = 0; attempt < 100; attempt++) {
     const board: Board = []
     for (let i = 0; i < SIZE * SIZE; i++) {
@@ -71,8 +219,8 @@ export function createBoard(random: Random = Math.random): Board {
         forbidden.add(board[i - 1]!.kind)
       if (i >= SIZE * 2 && board[i - SIZE]?.kind === board[i - SIZE * 2]?.kind)
         forbidden.add(board[i - SIZE]!.kind)
-      const options = KINDS.filter((kind) => !forbidden.has(kind))
-      board.push({ ...pill(random), kind: options[Math.floor(random() * options.length)]! })
+      const options = kinds.filter((kind) => !forbidden.has(kind))
+      board.push({ ...pill(random, kinds), kind: options[Math.floor(random() * options.length)]! })
     }
     if (findMove(board)) return board
   }
@@ -80,7 +228,12 @@ export function createBoard(random: Random = Math.random): Board {
 }
 
 /** Stable gravity keeps surviving pills in their original vertical order. */
-export function collapse(board: Board, matched: number[], random: Random = Math.random): Board {
+export function collapse(
+  board: Board,
+  matched: number[],
+  random: Random = Math.random,
+  kinds: readonly Kind[] = FRUIT_KINDS,
+): Board {
   const removed = new Set(matched)
   const result: Board = []
   for (let col = 0; col < SIZE; col++) {
@@ -90,7 +243,18 @@ export function collapse(board: Board, matched: number[], random: Random = Math.
       if (!removed.has(index)) survivors.push(board[index]!)
     }
     for (let row = SIZE - 1; row >= 0; row--)
-      result[row * SIZE + col] = survivors.pop() ?? pill(random)
+      result[row * SIZE + col] = survivors.pop() ?? pill(random, kinds)
   }
   return result
+}
+
+/** Shuffle regular tiles while preserving earned specials at their current positions. */
+export function shuffleBoard(
+  board: Board,
+  random: Random = Math.random,
+  kinds: readonly Kind[] = FRUIT_KINDS,
+): Board {
+  return createBoard(random, kinds).map((tile, index) =>
+    board[index]!.special ? board[index]! : tile,
+  )
 }
