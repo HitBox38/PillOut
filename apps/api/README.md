@@ -6,12 +6,12 @@ Requires Python 3.12 or newer and uv 0.9.27 or newer. Local development and CI u
 
 ## Database (Turso)
 
-The API uses [Turso](https://turso.tech/) via `libsql-client`. Set:
+The API uses [Turso](https://turso.tech/) via the maintained `libsql` SDK. Remote connections use HTTP; the deprecated `libsql-client` SDK selects WebSockets for `libsql://` URLs, which Turso's AWS endpoints no longer support. Set:
 
 - `TURSO_DATABASE_URL` — libSQL URL from the Turso dashboard (optional; defaults to the shared Pillout Turso database when unset)
 - `TURSO_AUTH_TOKEN` — database auth token (required for remote URLs; may be empty for local `file:` URLs)
 
-On startup the app applies `schema.sql` (`CREATE TABLE IF NOT EXISTS` …).
+On startup the app applies `schema.sql` (`CREATE TABLE IF NOT EXISTS` …). A single database worker owns the SDK connection and serializes queries, with autocommit enabled so writes persist between requests. The async API handlers use the same query interface for remote Turso and local `file:` databases.
 
 Copy `.env.example` to `.env`, set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, then run `pnpm run dev` (uvicorn loads `.env` via `--env-file`). For local SQLite without Turso:
 
