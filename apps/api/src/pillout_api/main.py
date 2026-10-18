@@ -8,7 +8,7 @@ import libsql_client
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
-from pillout_api.database import (
+from .database import (
     RowDict,
     cell_int,
     create_db_client,
