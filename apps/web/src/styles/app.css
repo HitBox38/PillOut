@@ -95,7 +95,6 @@ legend,
   width: 220px;
   height: auto;
   margin: -6px auto -4px;
-  mix-blend-mode: lighten;
   user-select: none;
 }
 .screen-topline {
