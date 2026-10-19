@@ -7,12 +7,17 @@ import { useDailyRewards } from '../hooks/useDailyRewards'
 import type { Prize } from '../types'
 import PrizeArt from './PrizeArt'
 import { useReducedMotion } from '@/features/GameEffects/hooks/useReducedMotion'
+import { useRewardPagination } from '../hooks/useRewardPagination'
+import { useRewardViewport } from '../hooks/useRewardViewport'
+import RewardPager from './RewardPager'
 
 export default function ClaimReward({ date, onClose }: { date: string; onClose: () => void }) {
   const prizes = useDailyRewards((s) => s.prizes)
   const [selected, setSelected] = useState(prizes[0]?.id ?? '')
   const [claimed, setClaimed] = useState<Prize | null>(null)
   const reduced = useReducedMotion()
+  const pager = useRewardPagination(prizes, 4)
+  const height = useRewardViewport()
   return (
     <Dialog
       open
@@ -23,6 +28,7 @@ export default function ClaimReward({ date, onClose }: { date: string; onClose: 
       <DialogContent
         className="game-dialog reward-claim-dialog"
         data-reduced={reduced || undefined}
+        style={{ height: `min(680px, ${height - 24}px)` }}
       >
         <DialogTitle>
           {claimed ? 'A little joy, just for you!' : 'You earned a little joy!'}
@@ -40,11 +46,12 @@ export default function ClaimReward({ date, onClose }: { date: string; onClose: 
           </output>
         ) : (
           <fieldset className="claim-prize-options" aria-label="Choose your reward">
-            {prizes.map((prize) => (
+            {pager.items.map((prize) => (
               <Button
                 key={prize.id}
                 className="claim-prize-option"
                 aria-pressed={selected === prize.id}
+                title={prize.name}
                 onClick={() => setSelected(prize.id)}
               >
                 <PrizeArt prize={prize} />
@@ -57,6 +64,15 @@ export default function ClaimReward({ date, onClose }: { date: string; onClose: 
         {!claimed && !prizes.length && (
           <Link to="/reward-choices">Ask a caregiver to choose prizes</Link>
         )}
+        {!claimed && (
+          <p className="claim-selected" aria-live="polite">
+            Your choice:{' '}
+            <strong>
+              {prizes.find((prize) => prize.id === selected)?.name ?? 'Choose a prize'}
+            </strong>
+          </p>
+        )}
+        {!claimed && <RewardPager {...pager} label="reward options" />}
         <Button
           className="candy-button"
           disabled={!claimed && !selected}

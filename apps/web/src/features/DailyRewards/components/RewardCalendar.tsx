@@ -4,6 +4,7 @@ import { MILESTONES } from '../constants'
 import { rewardWeek } from '../helpers'
 import type { RewardDay } from '../types'
 import PrizeArt from './PrizeArt'
+import type { CSSProperties } from 'react'
 
 export default function RewardCalendar({ days, today }: { days: RewardDay[]; today: string }) {
   const { start, current, week } = rewardWeek(days, today)
@@ -55,7 +56,12 @@ export default function RewardCalendar({ days, today }: { days: RewardDay[]; tod
                 </h2>
                 <div className="reward-day-art">
                   {index === 6 && !claimed ? (
-                    <Artwork source="rewards" crop={[75, 1230, 581, 146]} />
+                    <span
+                      className="prize-art-space"
+                      style={{ '--prize-ratio': 581 / 146 } as CSSProperties}
+                    >
+                      <Artwork source="rewards" crop={[75, 1230, 581, 146]} className="prize-art" />
+                    </span>
                   ) : (
                     <PrizeArt prize={day?.prize} />
                   )}

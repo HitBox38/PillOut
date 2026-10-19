@@ -1,6 +1,12 @@
 import { PRIZES } from './constants'
 import type { Prize, RewardDay, RewardProgress } from './types'
 
+export function getRewardPage<T>(items: readonly T[], size: number, requestedPage: number) {
+  const pages = Math.max(1, Math.ceil(items.length / size))
+  const page = Math.max(0, Math.min(requestedPage, pages - 1))
+  return { items: items.slice(page * size, (page + 1) * size), page, pages }
+}
+
 /** Local calendar dates: a new day follows the player's device, not UTC. */
 export function localDate(date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`

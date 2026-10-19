@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { ChevronRight, Heart, Settings2, ShieldCheck } from 'lucide-react'
+import { ChevronRight, Heart, Settings2, ShieldCheck, Ticket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useDailyRewards } from '../hooks/useDailyRewards'
 import { useRewardDate } from '../hooks/useRewardDate'
@@ -14,6 +14,8 @@ export default function RewardsCalendarPage() {
   const hasPrizes = useDailyRewards((s) => s.prizes.length > 0)
   const today = useRewardDate()
   const [claimDate, setClaimDate] = useState<string | null>(null)
+  const [pocketOpen, setPocketOpen] = useState(false)
+  const pocketCount = days.filter((day) => day.prize && !day.received).length
   const pending = days.find((day) => !day.prize)
   const wonToday = days.some((day) => day.date >= today)
   return (
@@ -62,18 +64,24 @@ export default function RewardsCalendarPage() {
           <ShieldCheck /> Miss a day? Your progress stays yours.
         </p>
       </div>
-      <EarnedPrizes />
-      <Link to="/reward-choices" className="reward-choices-link">
-        <Settings2 />
-        <span>
-          For caregivers<strong>Choose their rewards</strong>
-        </span>
-        <ChevronRight />
-      </Link>
+      <div className="reward-secondary-actions">
+        <Button className="reward-pocket-trigger" onClick={() => setPocketOpen(true)}>
+          <Ticket />
+          Prize pocket <span>{pocketCount}</span>
+        </Button>
+        <Link to="/reward-choices" className="reward-choices-link">
+          <Settings2 />
+          <span>
+            <strong>Choose prizes</strong>
+          </span>
+          <ChevronRight />
+        </Link>
+      </div>
       <p className="rewards-device-note">
-        Rewards are saved on this device. Prizes are arranged with your caregiver.
+        Prizes arranged with your caregiver. Saved on this device.
       </p>
       {claimDate && <ClaimReward date={claimDate} onClose={() => setClaimDate(null)} />}
+      {pocketOpen && <EarnedPrizes onClose={() => setPocketOpen(false)} />}
     </>
   )
 }

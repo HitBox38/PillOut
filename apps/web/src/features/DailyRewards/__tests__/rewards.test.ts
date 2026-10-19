@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PRIZES } from '../constants'
-import { earnReward, localDate, restoreRewards, rewardWeek } from '../helpers'
+import { earnReward, getRewardPage, localDate, restoreRewards, rewardWeek } from '../helpers'
 import { useDailyRewards } from '../hooks/useDailyRewards'
 import type { RewardDay } from '../types'
 
@@ -21,6 +21,23 @@ beforeEach(() => {
 })
 
 describe('daily reward rules', () => {
+  it('keeps every prize reachable in bounded pages without duplicates', () => {
+    const prizes = Array.from({ length: 19 }, (_, index) => `Prize ${index}`)
+    const pages = Array.from(
+      { length: getRewardPage(prizes, 6, 0).pages },
+      (_, page) => getRewardPage(prizes, 6, page).items,
+    )
+    expect(pages.every((page) => page.length <= 6)).toBe(true)
+    expect(pages.flat()).toEqual(prizes)
+  })
+
+  it('returns to the last available pocket page after a prize is received', () => {
+    expect(getRewardPage(['book', 'toy'], 1, 2)).toEqual({ items: ['toy'], page: 1, pages: 2 })
+  })
+
+  it('keeps the empty pocket on a valid page', () => {
+    expect(getRewardPage([], 1, 4)).toEqual({ items: [], page: 0, pages: 1 })
+  })
   it('uses local midnight, rather than UTC or a 24-hour waiting period', () => {
     expect(localDate(new Date(2026, 9, 19, 23, 59))).toBe('2026-10-19')
     expect(localDate(new Date(2026, 9, 20, 0, 0))).toBe('2026-10-20')
