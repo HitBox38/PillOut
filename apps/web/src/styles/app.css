@@ -552,8 +552,8 @@ fieldset {
   height: var(--game-height);
 }
 .mobile-screen.game-screen {
-  --hud-height: clamp(94px, calc(var(--game-height) * 0.17), 158px);
-  width: min(100%, calc(var(--game-height) * 0.5));
+  --hud-height: clamp(94px, calc(var(--game-height) * 0.14), 132px);
+  width: 100%;
   max-width: 530px;
   min-height: 0;
   height: var(--game-height);
@@ -1120,6 +1120,9 @@ fieldset {
   .app-shell:has(.game-screen) {
     --game-height: calc(100dvh - 24px);
     padding: 12px 0;
+  }
+  .mobile-screen.game-screen {
+    width: min(100%, calc(var(--game-height) * 0.5));
   }
   .setup-screen > .game-logo {
     width: 240px;
