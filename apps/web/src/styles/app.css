@@ -804,6 +804,37 @@ fieldset {
   height: clamp(24px, 8cqh, 44px);
   flex-shrink: 0;
 }
+
+/* Presence stays mounted so an interrupted fade reverses from its current opacity. */
+.round-overlay {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 120ms var(--ease-out),
+    visibility 120ms;
+}
+
+.round-overlay[data-open] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition-duration: 180ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .round-overlay {
+    transition-duration: 120ms !important;
+  }
+}
+
+.game-screen[data-reduced] .round-overlay {
+  transition-duration: 120ms;
+}
+
+.round-overlay[data-motion='instant'] {
+  transition: none !important;
+}
 .board-overlay h2 {
   font-size: clamp(18px, 7cqh, 31px);
   line-height: 1.1;

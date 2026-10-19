@@ -3,6 +3,7 @@ import { Play, Trophy } from 'lucide-react'
 import { Avatar } from '@/features/PlayerSetup/components/Avatar'
 import type { AvatarOption } from '@/features/PlayerSetup/types'
 import { Button } from '@/components/ui/button'
+import { ART_SOURCES } from '@/lib/art-assets'
 import { CONFETTI } from '../constants'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 
@@ -10,10 +11,17 @@ interface Props {
   score: number
   avatar: AvatarOption
   level: number
+  rescuedBears?: number
   onContinue: () => void
 }
 
-export default function VictoryCelebration({ score, avatar, level, onContinue }: Props) {
+export default function VictoryCelebration({
+  score,
+  avatar,
+  level,
+  rescuedBears,
+  onContinue,
+}: Props) {
   const reduced = useReducedMotion()
   return (
     <div className="board-overlay victory-overlay" data-reduced={reduced || undefined}>
@@ -38,13 +46,17 @@ export default function VictoryCelebration({ score, avatar, level, onContinue }:
         </div>
       )}
       <div className="victory-emblem" aria-hidden="true">
-        <Trophy className="victory-trophy" />
+        {rescuedBears ? (
+          <img className="victory-trophy victory-bear" src={ART_SOURCES.bear.src} alt="" />
+        ) : (
+          <Trophy className="victory-trophy" />
+        )}
         <div className="victory-avatar">
           <Avatar avatar={avatar} />
         </div>
       </div>
       <h2>
-        <output>You did it!</output>
+        <output>{rescuedBears ? 'Bears rescued!' : 'You did it!'}</output>
       </h2>
       <p className="victory-score">{score.toLocaleString()} points</p>
       <p>Level {level} complete. Progress saved!</p>

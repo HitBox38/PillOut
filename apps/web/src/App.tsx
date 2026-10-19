@@ -78,9 +78,16 @@ function HowToPlay() {
         <li>
           <h2>Go for the goal</h2>
           <p>
-            Reach each level’s point goal before your moves run out in Classic. Goals grow in waves,
-            with gentler levels between challenges. Your level progress is saved on this device.
-            Switch to Zen in settings for unlimited moves. Hints and shuffles are free.
+            Rescue hidden bears or reach the level’s point goal before your moves run out in
+            Classic. Goals vary in waves, with gentler levels between challenges. Your level
+            progress is saved on this device. Switch to Zen in settings for unlimited moves. Hints
+            and shuffles are free.
+          </p>
+          <p>
+            On bear levels, match pills on covered cells or hit them with specials to reveal what’s
+            underneath. Each bear spans 2 × 2 cells: uncover all four to rescue it. Rescue every
+            bear to win; score is a bonus. Shuffles keep your discoveries, and retries restore the
+            covering.
           </p>
           <p>
             After every two losses on a level, your next try gets two extra moves, up to six. Your

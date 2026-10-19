@@ -24,9 +24,11 @@ export default function GoalComets({ wave, reducedMotion }: Props) {
       const target = goal.getBoundingClientRect()
       const tx = target.x + target.width / 2 - bounds.x
       const ty = target.y + target.height / 2 - bounds.y
-      wave.clearing.slice(0, 9).forEach((index, i) => {
-        const x = source.x + (((index % SIZE) + 0.5) * source.width) / SIZE - bounds.x
-        const y = source.y + ((Math.floor(index / SIZE) + 0.5) * source.height) / SIZE - bounds.y
+      const origins = wave.rescuedBears?.length ? wave.rescuedBears : wave.clearing
+      const center = wave.rescuedBears?.length ? 1 : 0.5
+      origins.slice(0, 9).forEach((index, i) => {
+        const x = source.x + (((index % SIZE) + center) * source.width) / SIZE - bounds.x
+        const y = source.y + ((Math.floor(index / SIZE) + center) * source.height) / SIZE - bounds.y
         const comet = document.createElement('span')
         comet.className = 'goal-comet'
         layer.append(comet)
