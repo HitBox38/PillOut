@@ -509,10 +509,6 @@ fieldset {
   font-size: 13px;
   line-height: 1.6;
 }
-.schedule-list {
-  display: grid;
-  gap: 14px;
-}
 .schedule-card {
   background: #1039a3;
   border: 1px solid #537ee9;
@@ -545,6 +541,7 @@ fieldset {
   padding: 7px;
   font-size: 16px;
 }
+
 .app-shell:has(.game-screen) {
   --game-height: 100dvh;
   min-height: 0;
@@ -555,8 +552,8 @@ fieldset {
   height: var(--game-height);
 }
 .mobile-screen.game-screen {
-  --hud-height: clamp(94px, calc(var(--game-height) * 0.17), 158px);
-  width: min(100%, calc(var(--game-height) * 0.5));
+  --hud-height: clamp(94px, calc(var(--game-height) * 0.14), 132px);
+  width: 100%;
   max-width: 530px;
   min-height: 0;
   height: var(--game-height);
@@ -1123,6 +1120,9 @@ fieldset {
   .app-shell:has(.game-screen) {
     --game-height: calc(100dvh - 24px);
     padding: 12px 0;
+  }
+  .mobile-screen.game-screen {
+    width: min(100%, calc(var(--game-height) * 0.5));
   }
   .setup-screen > .game-logo {
     width: 240px;
@@ -1942,4 +1942,322 @@ fieldset {
 .game-screen[data-reduced] .goal-stat[data-won] {
   animation: juice-fade 180ms var(--juice-out) both !important;
   transform: none !important;
+}
+
+/* The plan pages keep a single medicine and its actions in the visual viewport. */
+.app-shell:has(.plan-screen) {
+  min-height: 0;
+  height: 100dvh;
+  padding: 0;
+}
+.mobile-screen.plan-screen {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: clamp(44px, 10dvh, 96px) minmax(0, 1fr);
+  gap: 8px;
+  padding: max(10px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+.plan-screen > .game-logo {
+  width: min(48%, 180px);
+  height: 100%;
+  object-fit: contain;
+  margin: 0 auto;
+}
+.plan-screen .schedule-form {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  gap: 8px;
+}
+.plan-screen .setup-heading {
+  margin: 0;
+}
+.plan-screen .setup-heading h1 {
+  font-size: clamp(28px, 4.8dvh, 42px);
+}
+.plan-screen .demo-badge {
+  font-size: 10px;
+  padding: 2px 12px;
+  margin-top: 6px;
+}
+.plan-screen .schedule-intro {
+  font-size: 16px !important;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.plan-screen .plan-note {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.plan-screen .schedule-card {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  background: radial-gradient(ellipse at 30% 20%, #2463cf, #1039a3 85%);
+  box-shadow: inset 0 1px 0 #a1ceff40;
+}
+.plan-screen .schedule-pill {
+  margin: 0;
+  gap: 12px;
+}
+.plan-screen .schedule-pill .artwork {
+  width: clamp(48px, 10dvh, 90px);
+}
+.plan-screen .schedule-pill h2 {
+  font-size: clamp(20px, 3dvh, 28px);
+  line-height: 1.1;
+}
+.plan-screen .schedule-fields {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.plan-screen .schedule-fields label {
+  font-size: 14px;
+  line-height: 1.2;
+  gap: 6px;
+}
+.schedule-time-field {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+}
+.plan-time-trigger {
+  height: 46px;
+  min-width: 0;
+  width: 100%;
+  padding: 7px;
+  justify-content: space-between;
+  gap: 4px;
+  border: 3px solid #bb9df5;
+  border-radius: 14px;
+  background: #fefeff;
+  color: #152a76;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  box-shadow:
+    0 0 0 1px #8267de,
+    inset 0 1px 4px #4c298015;
+}
+.plan-time-trigger [data-placeholder] {
+  color: #75659b;
+  font-size: 14px;
+}
+.plan-time-trigger[aria-invalid='true'] {
+  border-color: #ffadcb;
+}
+.schedule-error {
+  min-height: 2.4em;
+  font-size: 12px;
+  line-height: 1.2;
+  color: #ffe1ee;
+}
+.schedule-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+.schedule-pagination [data-slot='button'] {
+  min-height: 44px;
+  color: #e8f8ff;
+}
+.plan-screen .setup-footer {
+  margin: 0;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+.plan-screen .candy-button[data-slot='button'] {
+  min-height: 52px;
+  padding: 8px 12px;
+  font-size: 23px;
+}
+.plan-screen .footer-caption {
+  font-size: 10px;
+  line-height: 1.2;
+}
+.plan-time-dialog {
+  width: min(360px, calc(100% - 24px));
+  max-width: none;
+  gap: 16px;
+  padding: 20px;
+  border: 3px solid #ac89f6;
+  border-radius: 24px;
+  background: radial-gradient(ellipse at 30% 0%, #285cce, #163aa0 85%);
+  box-shadow:
+    0 6px 0 #5921bd,
+    0 20px 70px #000d4b90,
+    inset 0 2px 0 #ffffff35;
+  color: white;
+  /* Keep dial and keyboard interactions immediate. */
+  animation: none;
+}
+.time-picker-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.time-picker-heading .artwork {
+  width: 56px;
+}
+.time-picker-heading [data-slot='dialog-title'] {
+  font-size: 26px;
+  font-weight: 700;
+}
+.time-picker-heading [data-slot='dialog-description'] {
+  color: #d7e4ff;
+  margin-top: 5px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.time-picker-dials {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.time-picker-dial {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  font-weight: 700;
+}
+.time-picker-dial > span {
+  font-size: 12px;
+  color: #d7e4ff;
+}
+.time-picker-dial [data-slot='button'] {
+  width: 100%;
+  min-height: 44px;
+  color: white;
+  border: 1px solid #93bbff66;
+  background: #5688ed40;
+}
+.time-picker-dial [role='spinbutton'] {
+  width: 100%;
+  padding: 8px;
+  border: 3px solid #bb9df5;
+  border-radius: 16px;
+  background: linear-gradient(#fff, #e4e3ff);
+  color: #283880;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 44px;
+  line-height: 1.1;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 3px 0 #7451c7;
+}
+.time-picker-dial [role='spinbutton']:focus-visible {
+  outline: 3px solid #72ffff;
+  outline-offset: 2px;
+}
+.time-picker-presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.time-picker-presets [data-slot='button'] {
+  min-height: 44px;
+  background: #183e9f;
+  color: #e8f8ff;
+  border: 1px solid #8ba6ff;
+  border-radius: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.time-picker-presets [aria-pressed='true'] {
+  background: #dffcff;
+  color: #123184;
+  border-color: #61ffff;
+}
+.time-picker-actions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+.time-picker-actions > [data-slot='button'],
+.time-picker-actions > [data-slot='dialog-close'] {
+  min-height: 44px;
+}
+.time-picker-actions .candy-button[data-slot='button'] {
+  min-height: 48px;
+  padding: 6px 10px;
+  font-size: 21px;
+  border-width: 3px;
+}
+.plan-time-dialog button:active {
+  transform: scale(0.97);
+}
+@media (min-width: 600px) {
+  .app-shell:has(.plan-screen) {
+    --plan-inset: 24px;
+    padding: 12px 0;
+  }
+}
+@media (max-height: 740px) {
+  .mobile-screen.plan-screen {
+    grid-template-rows: 44px minmax(0, 1fr);
+  }
+  .plan-screen .schedule-card {
+    padding: 12px;
+    gap: 8px;
+  }
+  .plan-screen .schedule-pill .artwork {
+    width: 48px;
+  }
+}
+.mobile-screen.plan-screen[data-compact] {
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+}
+.plan-screen[data-compact] > .game-logo,
+.plan-screen[data-compact] .screen-topline,
+.plan-screen[data-compact] .setup-heading,
+.plan-screen[data-compact] .plan-note,
+.plan-screen[data-compact] .footer-caption {
+  display: none;
+}
+.plan-screen[data-compact] .schedule-form {
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: 4px;
+}
+.plan-screen[data-compact] .schedule-card {
+  padding: 8px 12px;
+  gap: 6px;
+}
+.plan-screen[data-compact] .schedule-pill .artwork {
+  width: 40px;
+}
+.plan-screen[data-compact] .schedule-error {
+  min-height: 1.2em;
+}
+.plan-time-dialog[data-compact] {
+  gap: 6px;
+  padding: 8px;
+}
+.plan-time-dialog[data-compact] .time-picker-heading .artwork {
+  width: 36px;
+}
+.plan-time-dialog[data-compact] [data-slot='dialog-title'] {
+  font-size: 20px;
+}
+.plan-time-dialog[data-compact] [data-slot='dialog-description'] {
+  margin-top: 2px;
+  line-height: 1.2;
+}
+.plan-time-dialog[data-compact] .time-picker-dial [role='spinbutton'] {
+  font-size: 26px;
+  padding: 2px;
+}
+.plan-time-dialog[data-compact] .time-picker-presets {
+  display: none;
 }

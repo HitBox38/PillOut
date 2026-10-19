@@ -1,4 +1,6 @@
 import { readdir } from 'node:fs/promises'
+import { join, relative, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ALL_ART_SOURCES } from './art-assets'
 
@@ -49,13 +51,12 @@ afterEach(() => {
 
 describe('startup assets', () => {
   it('includes every supplied artwork file', async () => {
-    const files = await readdir(new URL('../../public/art/', import.meta.url), { recursive: true })
-    expect([...ALL_ART_SOURCES].sort()).toEqual(
-      files
-        .filter((file) => /\.(png|jpg)$/.test(file))
-        .map((file) => `/art/${file}`)
-        .sort(),
-    )
+    const directory = fileURLToPath(new URL('../../public/art/', import.meta.url))
+    const entries = await readdir(directory, { recursive: true, withFileTypes: true })
+    const files = entries
+      .filter((entry) => entry.isFile())
+      .map((entry) => relative(directory, join(entry.parentPath, entry.name)).split(sep).join('/'))
+    expect([...ALL_ART_SOURCES].sort()).toEqual(files.map((file) => `/art/${file}`).sort())
   })
 
   it('waits for decoded artwork and every font, and shares concurrent startup loads', async () => {
