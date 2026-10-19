@@ -6,17 +6,25 @@ import PillSelection from './components/PillSelection'
 import Schedule from './components/Schedule'
 import { usePlayerSetup } from './hooks/usePlayerSetup'
 import { useSetupCatalogs } from './hooks/useSetupCatalogs'
+import { useSetupViewport } from './hooks/useSetupViewport'
 import type { Props } from './types'
 
 export default function PlayerSetup({ step }: Props) {
   useSetupCatalogs()
   const navigate = useNavigate()
   const player = usePlayerSetup()
+  const viewportHeight = useSetupViewport()
   const actualStep = step === 'schedule' && !player.selectedPills.length ? 'pills' : step
   return (
     <section
-      className={`mobile-screen setup-screen${actualStep === 'pills' ? ' pills-screen' : actualStep === 'welcome' ? ' welcome-screen' : ''}`}
+      className={`mobile-screen setup-screen${actualStep === 'pills' ? ' pills-screen' : actualStep === 'welcome' ? ' welcome-screen' : ' plan-screen'}`}
+      style={
+        actualStep === 'schedule'
+          ? { height: `calc(${viewportHeight}px - var(--plan-inset, 0px))` }
+          : undefined
+      }
       aria-label="Player setup"
+      data-compact={(actualStep === 'schedule' && viewportHeight < 470) || undefined}
     >
       <div className="screen-topline">
         <Link
