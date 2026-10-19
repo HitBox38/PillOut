@@ -3,7 +3,6 @@ import type { MouseEvent } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
   CircleHelp,
-  Gift,
   Lightbulb,
   Pause,
   Play,
@@ -37,7 +36,6 @@ import GameEffects, {
   VictoryCelebration,
   useReducedMotion,
 } from '@/features/GameEffects'
-import { useDailyRewards } from '@/features/DailyRewards/hooks/useDailyRewards'
 import GameMenu from '@/features/GameMenu'
 
 const DIFFICULTY_LABELS = {
@@ -73,7 +71,6 @@ export function GamePage() {
   const blocked = phase !== 'idle' || paused || outcome !== 'playing'
   const game = useGameStore.getState
   const retry = getLevelConfig(progress.level, kindCount, progress.losses)
-  const pendingRewards = useDailyRewards((s) => s.days.filter((day) => !day.prize).length)
   const rescueGoal = mode === 'classic' && level.goal.type === 'bears' ? level.goal : null
 
   const togglePause = (event: MouseEvent<HTMLButtonElement>) => {
@@ -218,11 +215,6 @@ export function GamePage() {
           {message}
         </output>
       </div>
-      <Link to="/rewards" className="game-rewards-link">
-        <Gift aria-hidden="true" />
-        <span>{pendingRewards ? 'Your daily reward is ready!' : 'Daily rewards'}</span>
-        <span>{pendingRewards ? `${pendingRewards} to claim` : 'A little joy each day'}</span>
-      </Link>
       <p id="special-tile-help" className="sr-only">
         Swap a special with a neighbor to activate it. Bomb: 3 × 3. Hammer: row for a horizontal
         swap, column for a vertical swap. Crown: every object of its swap partner’s type.
