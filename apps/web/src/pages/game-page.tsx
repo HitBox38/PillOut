@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { useState } from 'react'
 import type { MouseEvent } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { Avatar } from '@/features/PlayerSetup/components/Avatar'
 import { Button } from '@/components/ui/button'
+import { GameBoard } from '@/components/game-board'
 import {
   Dialog,
   DialogContent,
@@ -39,9 +40,6 @@ import GameEffects, {
 import { useDailyRewards } from '@/features/DailyRewards/hooks/useDailyRewards'
 import GameMenu from '@/features/GameMenu'
 
-const GameBoard = lazy(() =>
-  import('@/components/game-board').then((module) => ({ default: module.GameBoard })),
-)
 const DIFFICULTY_LABELS = {
   warmup: 'WARM-UP',
   breather: 'BREATHER',
@@ -173,13 +171,7 @@ export function GamePage() {
       <div className="board-space">
         <div className="board-frame">
           <div className={paused ? 'board-blurred' : ''}>
-            <Suspense
-              fallback={
-                <output className="board-surface board-loading">Mixing your colors…</output>
-              }
-            >
-              <GameBoard />
-            </Suspense>
+            <GameBoard />
           </div>
           {outcome === 'won' ? (
             <VictoryCelebration

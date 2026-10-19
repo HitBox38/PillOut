@@ -8,10 +8,13 @@ import '@fontsource/dm-sans/latin-700.css'
 import '@fontsource/fredoka/latin-700.css'
 import './index.css'
 import App from './App'
+import AssetPreload from './features/AssetPreload'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <AssetPreload>
+      <App />
+    </AssetPreload>
     <Analytics mode={import.meta.env.DEV ? 'development' : 'production'} />
   </StrictMode>,
 )
