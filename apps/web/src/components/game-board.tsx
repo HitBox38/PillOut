@@ -5,6 +5,7 @@ import { SIZE } from '@/game/engine'
 import type { Pill } from '@/game/engine'
 import { useGameStore } from '@/game/store'
 import { Artwork } from '@/components/artwork'
+import BearRescue from '@/features/BearRescue'
 import { ART_SOURCES, TILE_ART, SPECIAL_ART, getTileArt } from '@/lib/art-assets'
 import { systemReducesMotion, BIRTH_DURATION } from '@/game/effects'
 import { BoardEffects, CELL, BOARD_WIDTH as WIDTH, easeOut } from './game-board-effects'
@@ -38,9 +39,18 @@ export function GameBoard() {
   const outcome = useGameStore((state) => state.outcome)
   const phase = useGameStore((state) => state.phase)
   const hint = useGameStore((state) => state.hint)
+  const rescue = useGameStore((state) => state.rescue)
+  const goal = useGameStore((state) => state.level.goal)
+  const wave = useGameStore((state) => state.wave)
   const pointer = useRef<{ index: number; x: number; y: number; id: number } | null>(null)
   const swiped = useRef(false)
   const [focusIndex, setFocusIndex] = useState(0)
+  const rescued = new Set(rescue?.rescued)
+  const revealedBearCells = new Set(
+    goal.type === 'bears'
+      ? goal.bears.filter((bear) => !rescued.has(bear.origin)).flatMap((bear) => bear.cells)
+      : [],
+  )
 
   useEffect(() => {
     const app = new Application()
@@ -59,6 +69,7 @@ export function GameBoard() {
         clearing: boolean
         index: number
         special: boolean
+        revealed: boolean
         bornAt: number | null
       }
     >()
@@ -114,6 +125,7 @@ export function GameBoard() {
         const sync = () => {
           const state = useGameStore.getState()
           const reduce = state.reducedMotion || systemReducesMotion()
+          grid.visible = !state.rescue
           if (session !== state.session) {
             effects.clear()
             session = state.session
@@ -122,6 +134,15 @@ export function GameBoard() {
           const clearing = new Set(state.clearing)
           const created = new Set(state.wave?.created)
           const hinted = new Set(state.hint ?? [])
+          const rescued = new Set(state.rescue?.rescued)
+          const collecting = new Set(state.phase === 'clearing' ? state.wave?.rescuedBears : [])
+          const visibleBearCells = new Set(
+            state.level.goal.type === 'bears'
+              ? state.level.goal.bears
+                  .filter((bear) => !rescued.has(bear.origin) || collecting.has(bear.origin))
+                  .flatMap((bear) => bear.cells)
+              : [],
+          )
           for (const [id, node] of nodes) {
             if (!ids.has(id)) {
               node.view.destroy({ children: true })
@@ -140,6 +161,7 @@ export function GameBoard() {
                 clearing: false,
                 index,
                 special: Boolean(pill.special),
+                revealed: false,
                 bornAt:
                   state.phase === 'clearing' && created.has(index)
                     ? (state.wave?.startedAt ?? null)
@@ -158,6 +180,9 @@ export function GameBoard() {
             node.targetY = y
             node.index = index
             node.clearing = clearing.has(index)
+            node.revealed = Boolean(
+              state.rescue && !state.rescue.covered[index] && visibleBearCells.has(index),
+            )
             node.ring.visible = state.selected === index || hinted.has(index)
           })
           if (state.wave && state.wave.id !== lastWave) {
@@ -196,7 +221,7 @@ export function GameBoard() {
             }
             node.view.x += (node.targetX - node.view.x) * factor
             node.view.y += (node.targetY - node.view.y) * factor
-            const targetScale = node.clearing && !reduce ? 0.8 : 1
+            const targetScale = node.revealed ? 0.65 : node.clearing && !reduce ? 0.8 : 1
             const scale = node.view.scale.x + (targetScale - node.view.scale.x) * factor
             node.view.scale.set(scale)
             if (node.bornAt && !reduce) {
@@ -228,12 +253,21 @@ export function GameBoard() {
 
   return (
     <div className="board-surface">
+      {rescue && goal.type === 'bears' && (
+        <BearRescue
+          goal={goal}
+          rescue={rescue}
+          collecting={phase === 'clearing' ? (wave?.rescuedBears ?? []) : []}
+        />
+      )}
       <div ref={host} className="pixi-host" aria-hidden="true" />
       <div
         className={`board-input ${error ? 'board-fallback' : ''}`}
         role="grid"
         aria-label="Match-three pill board"
         aria-busy={phase !== 'idle'}
+        aria-describedby={rescue ? 'bear-rescue-help' : undefined}
+        data-rescue={Boolean(rescue) || undefined}
       >
         {Array.from({ length: SIZE }, (_, row) => (
           <div role="row" className="board-row" key={row}>
@@ -245,14 +279,17 @@ export function GameBoard() {
                   <button
                     type="button"
                     tabIndex={focusIndex === index ? 0 : -1}
-                    aria-label={`${art.label}, row ${row + 1}, column ${col + 1}${hint?.includes(index) ? ', hint' : ''}`}
+                    aria-label={`${art.label}, row ${row + 1}, column ${col + 1}${hint?.includes(index) ? ', hint' : ''}${rescue ? (rescue.covered[index] ? ', covered' : revealedBearCells.has(index) ? ', bear revealed' : ', uncovered') : ''}`}
                     aria-pressed={selected === index}
                     aria-describedby={pill.special ? 'special-tile-help' : undefined}
                     aria-disabled={disabled}
                     data-hint={hint?.includes(index) || undefined}
                     onFocus={() => setFocusIndex(index)}
-                    onClick={() => {
-                      if (!swiped.current) useGameStore.getState().select(index)
+                    onClick={(event) => {
+                      if (!swiped.current)
+                        useGameStore
+                          .getState()
+                          .select(index, event.detail > 0 ? 'pointer' : 'keyboard')
                       swiped.current = false
                     }}
                     onPointerDown={(event) => {
@@ -277,7 +314,7 @@ export function GameBoard() {
                       const target =
                         start.index +
                         (Math.abs(dx) > Math.abs(dy) ? Math.sign(dx) : Math.sign(dy) * SIZE)
-                      void useGameStore.getState().trySwap(start.index, target)
+                      void useGameStore.getState().trySwap(start.index, target, 'pointer')
                     }}
                     onPointerCancel={() => {
                       pointer.current = null

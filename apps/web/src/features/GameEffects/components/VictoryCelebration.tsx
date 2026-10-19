@@ -4,6 +4,7 @@ import { Link } from '@tanstack/react-router'
 import { Avatar } from '@/features/PlayerSetup/components/Avatar'
 import type { AvatarOption } from '@/features/PlayerSetup/types'
 import { Button } from '@/components/ui/button'
+import { ART_SOURCES } from '@/lib/art-assets'
 import { CONFETTI } from '../constants'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useDailyRewards } from '@/features/DailyRewards/hooks/useDailyRewards'
@@ -12,10 +13,17 @@ interface Props {
   score: number
   avatar: AvatarOption
   level: number
+  rescuedBears?: number
   onContinue: () => void
 }
 
-export default function VictoryCelebration({ score, avatar, level, onContinue }: Props) {
+export default function VictoryCelebration({
+  score,
+  avatar,
+  level,
+  rescuedBears,
+  onContinue,
+}: Props) {
   const reduced = useReducedMotion()
   const hasReward = useDailyRewards((s) => s.days.some((day) => !day.prize))
   return (
@@ -41,13 +49,17 @@ export default function VictoryCelebration({ score, avatar, level, onContinue }:
         </div>
       )}
       <div className="victory-emblem" aria-hidden="true">
-        <Trophy className="victory-trophy" />
+        {rescuedBears ? (
+          <img className="victory-trophy victory-bear" src={ART_SOURCES.bear.src} alt="" />
+        ) : (
+          <Trophy className="victory-trophy" />
+        )}
         <div className="victory-avatar">
           <Avatar avatar={avatar} />
         </div>
       </div>
       <h2>
-        <output>You did it!</output>
+        <output>{rescuedBears ? 'Bears rescued!' : 'You did it!'}</output>
       </h2>
       <p className="victory-score">{score.toLocaleString()} points</p>
       <p>Level {level} complete. Progress saved!</p>

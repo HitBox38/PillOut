@@ -160,17 +160,19 @@ describe('game session', () => {
   })
 
   it('ends a Classic game when the target is reached, including on the final move', async () => {
-    useGameStore.setState({ score: useGameStore.getState().level.target - 50, moves: 1 })
+    startScoreLevel()
+    useGameStore.setState({ score: currentScoreTarget() - 50, moves: 1 })
     const pending = useGameStore.getState().trySwap(...findMove(useGameStore.getState().board)!)
     await vi.runAllTimersAsync()
     await pending
     expect(useGameStore.getState().outcome).toBe('won')
     expect(useGameStore.getState().moves).toBe(0)
     expect(useDailyRewards.getState().days).toHaveLength(1)
-    expect(useDailyRewards.getState().days[0]?.level).toBe(1)
+    expect(useDailyRewards.getState().days[0]?.level).toBe(2)
   })
 
   it('ends a Classic game below the target after the final move', async () => {
+    startScoreLevel()
     const board = fixtureBoard()
     for (const index of [17, 18]) board[index] = { ...board[index]!, kind: 'mercaptopurine' }
     let next = 0
@@ -188,9 +190,19 @@ describe('game session', () => {
 
 describe('level progression', () => {
   it('earns a daily reward once across multiple wins and restarts on the same day', async () => {
+    vi.spyOn(engine, 'collapse').mockImplementation(() => fixtureBoard())
     for (let attempt = 0; attempt < 2; attempt++) {
-      useGameStore.setState({ score: useGameStore.getState().level.target - 50, moves: 1 })
-      const pending = useGameStore.getState().trySwap(...findMove(useGameStore.getState().board)!)
+      const { goal } = useGameStore.getState().level
+      if (goal.type === 'bears') {
+        const board: engine.Board = fixtureBoard()
+        board[26] = { ...board[26]!, special: 'bomb' }
+        useGameStore.setState({ board, moves: 1 })
+      } else {
+        useGameStore.setState({ score: goal.target - 50, moves: 1 })
+      }
+      const move =
+        goal.type === 'bears' ? ([26, 27] as const) : findMove(useGameStore.getState().board)!
+      const pending = useGameStore.getState().trySwap(...move)
       await vi.runAllTimersAsync()
       await pending
       expect(useGameStore.getState().outcome).toBe('won')
@@ -203,26 +215,26 @@ describe('level progression', () => {
   })
 
   it('unlocks the next level once after a real win, then starts its own goal and move budget', async () => {
-    useGameStore.setState({ progress: { level: 4, losses: 4 } })
+    useGameStore.setState({ progress: { level: 3, losses: 4 } })
     useGameStore.getState().newGame()
-    useGameStore.setState({ score: useGameStore.getState().level.target - 50, moves: 1 })
+    useGameStore.setState({ score: currentScoreTarget() - 50, moves: 1 })
     const pending = useGameStore.getState().trySwap(...findMove(useGameStore.getState().board)!)
     await vi.runAllTimersAsync()
     await pending
     expect(useGameStore.getState()).toMatchObject({
       outcome: 'won',
-      level: { number: 4 },
-      progress: { level: 5, losses: 0 },
+      level: { number: 3 },
+      progress: { level: 4, losses: 0 },
     })
     useGameStore.getState().nextLevel()
     const next = useGameStore.getState()
     expect(next).toMatchObject({
       outcome: 'playing',
       score: 0,
-      moves: 22,
-      level: { number: 5, difficulty: 'challenge' },
+      moves: 24,
+      level: { number: 4, goal: { type: 'bears' } },
     })
-    expect(next.level.target).toBe(engine.getLevelConfig(5, 3).target)
+    expect(next.rescue?.covered.every(Boolean)).toBe(true)
     useGameStore.getState().nextLevel()
     expect(useGameStore.getState().board).toBe(next.board)
   })
@@ -233,7 +245,7 @@ describe('level progression', () => {
       const board = fixtureBoard()
       for (const index of [17, 18]) board[index] = { ...board[index]!, kind: 'mercaptopurine' }
       useGameStore.setState({ board, moves: 1 })
-      const target = useGameStore.getState().level.target
+      const goal = useGameStore.getState().level.goal
       const pending = useGameStore.getState().trySwap(11, 19)
       await vi.runAllTimersAsync()
       await pending
@@ -241,7 +253,7 @@ describe('level progression', () => {
         outcome: 'lost',
         moves: 0,
         progress: { level: 1, losses: attempt },
-        level: { target, bonusMoves: 0 },
+        level: { goal, bonusMoves: 0 },
       })
       await useGameStore.getState().trySwap(11, 19)
       useGameStore.getState().nextLevel()
@@ -253,21 +265,21 @@ describe('level progression', () => {
       level: { number: 1, bonusMoves: 2 },
     })
     expect(useGameStore.getState().message).toContain('+2 moves')
-    const target = useGameStore.getState().level.target
+    const goal = useGameStore.getState().level.goal
     useGameStore.getState().newGame()
     expect(useGameStore.getState()).toMatchObject({
       moves: 26,
       progress: { losses: 2 },
-      level: { target },
+      level: { goal },
     })
   })
 
   it('preserves progression through medicine changes and Zen without leaking retry help into Zen', async () => {
     useGameStore.setState({ progress: { level: 10, losses: 6 } })
     useGameStore.getState().newGame()
-    const fruitGoal = useGameStore.getState().level.target
+    const fruitGoal = currentScoreTarget()
     useGameStore.getState().setMedicines(MEDICINE_IDS)
-    expect(useGameStore.getState().level.target).toBeLessThan(fruitGoal)
+    expect(currentScoreTarget()).toBeLessThan(fruitGoal)
     expect(useGameStore.getState()).toMatchObject({
       moves: 28,
       level: { number: 10, bonusMoves: 6 },
@@ -292,7 +304,7 @@ describe('level progression', () => {
   })
 
   it('does not award progress or a loss when a resolving attempt is abandoned', async () => {
-    useGameStore.setState({ score: useGameStore.getState().level.target - 50, moves: 1 })
+    useGameStore.setState({ score: 1000000, moves: 1 })
     const pending = useGameStore.getState().trySwap(...findMove(useGameStore.getState().board)!)
     useGameStore.getState().newGame()
     await vi.runAllTimersAsync()
@@ -305,12 +317,13 @@ describe('level progression', () => {
   })
 
   it('saves the unlock immediately, without persisting the active board', async () => {
-    useGameStore.setState({ score: useGameStore.getState().level.target - 50 })
+    startScoreLevel()
+    useGameStore.setState({ score: currentScoreTarget() - 50 })
     const pending = useGameStore.getState().trySwap(...findMove(useGameStore.getState().board)!)
     await vi.runAllTimersAsync()
     await pending
     const saved = JSON.parse(localStorage.getItem('pillout-preferences')!)
-    expect(saved.state.progress).toEqual({ level: 2, losses: 0 })
+    expect(saved.state.progress).toEqual({ level: 3, losses: 0 })
     expect(saved.state).not.toHaveProperty('board')
     useGameStore.setState({ progress: { level: 12, losses: 4 }, best: 123456 })
     const storage = localStorage.getItem('pillout-preferences')!
@@ -356,6 +369,17 @@ describe('level progression', () => {
     })
   })
 })
+
+function startScoreLevel() {
+  useGameStore.setState({ progress: { level: 2, losses: 0 } })
+  useGameStore.getState().newGame('classic')
+}
+
+function currentScoreTarget() {
+  const { goal } = useGameStore.getState().level
+  if (goal.type !== 'score') throw new Error('Expected score goal')
+  return goal.target
+}
 
 function fixtureBoard() {
   return Array.from({ length: SIZE * SIZE }, (_, i) => ({
@@ -421,7 +445,7 @@ describe('special tile sessions', () => {
   it('lets a special activation win on the final Classic move', async () => {
     const board: import('./engine').Board = fixtureBoard()
     board[26] = { ...board[26]!, special: 'bomb' }
-    useGameStore.setState({ board, score: useGameStore.getState().level.target - 100, moves: 1 })
+    useGameStore.setState({ board, score: 0, moves: 1 })
     const pending = useGameStore.getState().trySwap(26, 27)
     await vi.runAllTimersAsync()
     await pending
@@ -430,6 +454,28 @@ describe('special tile sessions', () => {
 })
 
 describe('game feel lifecycle', () => {
+  it.each(['pointer', 'keyboard'] as const)(
+    'keeps %s input attached to every wave of a move',
+    async (input) => {
+      const board = fixtureBoard()
+      for (const index of [17, 18]) board[index] = { ...board[index]!, kind: 'mercaptopurine' }
+      const cascade = fixtureBoard()
+      for (const index of [27, 28, 29]) cascade[index] = { ...cascade[index]!, kind: 'gold' }
+      vi.spyOn(engine, 'collapse')
+        .mockReturnValueOnce(cascade)
+        .mockImplementation(() => fixtureBoard())
+      useGameStore.setState({ board })
+      useGameStore.getState().select(11, input)
+      useGameStore.getState().select(19, input)
+      await vi.advanceTimersByTimeAsync(180)
+      expect(useGameStore.getState().wave).toMatchObject({ combo: 1, input })
+      await vi.advanceTimersByTimeAsync(480)
+      expect(useGameStore.getState().wave).toMatchObject({ combo: 2, input })
+      await vi.runAllTimersAsync()
+      expect(useGameStore.getState()).toMatchObject({ phase: 'idle', moves: 23 })
+    },
+  )
+
   it('animates an automatic dead-board remix through the same input lock', async () => {
     const dead = Array.from({ length: 64 }, (_, i) => ({
       id: `dead-${i}`,
@@ -531,5 +577,116 @@ describe('game feel lifecycle', () => {
     await vi.runAllTimersAsync()
     await pending
     expect(useGameStore.getState()).toMatchObject({ wave: null, remix: null, score: 0 })
+  })
+})
+
+describe('bear-rescue sessions', () => {
+  it('ignores bonus score and loses with any bear cells still covered', async () => {
+    vi.spyOn(engine, 'collapse').mockImplementation(() => fixtureBoard())
+    const board = fixtureBoard()
+    for (const index of [17, 18]) board[index] = { ...board[index]!, kind: 'mercaptopurine' }
+    useGameStore.setState({ board, moves: 1, score: 1000000 })
+    const pending = useGameStore.getState().trySwap(11, 19)
+    await vi.runAllTimersAsync()
+    await pending
+    expect(useGameStore.getState()).toMatchObject({
+      outcome: 'lost',
+      rescue: { rescued: [] },
+      progress: { level: 1, losses: 1 },
+    })
+    expect(useDailyRewards.getState().days).toEqual([])
+  })
+
+  it('uncovers a newly earned special cell without removing the special', async () => {
+    const board = fixtureBoard()
+    for (const index of [17, 18, 20]) board[index] = { ...board[index]!, kind: 'mercaptopurine' }
+    useGameStore.setState({ board })
+    const pending = useGameStore.getState().trySwap(11, 19)
+    await vi.advanceTimersByTimeAsync(180)
+    const state = useGameStore.getState()
+    expect(state.rescue!.covered[19]).toBe(false)
+    expect(state.rescue!.covered[16]).toBe(true)
+    expect(state.board[19]!.special).toBe('hammer')
+    useGameStore.getState().newGame()
+    await vi.runAllTimersAsync()
+    await pending
+  })
+
+  it('collects a bear once, wins below score thresholds on the final move, and unlocks the score level', async () => {
+    vi.spyOn(engine, 'collapse').mockImplementation(() => fixtureBoard())
+    const board: engine.Board = fixtureBoard()
+    board[26] = { ...board[26]!, special: 'bomb' }
+    useGameStore.setState({ board, moves: 1 })
+    const pending = useGameStore.getState().trySwap(26, 27)
+    await vi.advanceTimersByTimeAsync(180)
+    expect(useGameStore.getState()).toMatchObject({
+      rescue: { rescued: [27] },
+      wave: { rescuedBears: [27] },
+      score: 450,
+    })
+    await vi.runAllTimersAsync()
+    await pending
+    expect(useGameStore.getState()).toMatchObject({
+      outcome: 'won',
+      moves: 0,
+      progress: { level: 2, losses: 0 },
+    })
+    expect(useGameStore.getState().rescue!.covered.filter(Boolean)).toHaveLength(55)
+    useGameStore.getState().nextLevel()
+    expect(useGameStore.getState()).toMatchObject({
+      rescue: null,
+      level: { goal: { type: 'score' } },
+      score: 0,
+    })
+  })
+
+  it('applies discoveries from cascades and preserves them through manual and automatic shuffles', async () => {
+    const cascade = fixtureBoard()
+    for (const index of [27, 28, 29]) cascade[index] = { ...cascade[index]!, kind: 'gold' }
+    const dead = Array.from({ length: 64 }, (_, i) => ({
+      id: `rescue-dead-${i}`,
+      kind: FRUIT_KINDS[(Math.floor(i / 8) + (i % 8)) % 3]!,
+    }))
+    vi.spyOn(engine, 'collapse').mockReturnValueOnce(cascade).mockReturnValue(dead)
+    const board = fixtureBoard()
+    for (const index of [17, 18]) board[index] = { ...board[index]!, kind: 'mercaptopurine' }
+    useGameStore.setState({ board })
+    const pending = useGameStore.getState().trySwap(11, 19)
+    await vi.advanceTimersByTimeAsync(1140)
+    expect(useGameStore.getState().phase).toBe('shuffling')
+    expect(useGameStore.getState().rescue!.covered[27]).toBe(false)
+    const rescue = useGameStore.getState().rescue
+    await vi.runAllTimersAsync()
+    await pending
+    expect(useGameStore.getState().rescue).toBe(rescue)
+    const shuffle = useGameStore.getState().shuffle()
+    await vi.runAllTimersAsync()
+    await shuffle
+    expect(useGameStore.getState().rescue).toBe(rescue)
+  })
+
+  it('resets discoveries on restart, medicine changes, and refresh without leaking rescue into Zen', async () => {
+    const originalGoal = useGameStore.getState().level.goal
+    const board: engine.Board = fixtureBoard()
+    board[26] = { ...board[26]!, special: 'bomb' }
+    useGameStore.setState({ board })
+    const pending = useGameStore.getState().trySwap(26, 27)
+    await vi.advanceTimersByTimeAsync(180)
+    expect(useGameStore.getState().rescue!.rescued).toEqual([27])
+    useGameStore.getState().setMedicines(['dasatinib'])
+    const fresh = useGameStore.getState().rescue
+    await vi.runAllTimersAsync()
+    await pending
+    expect(useGameStore.getState().rescue).toBe(fresh)
+    expect(fresh!.covered.every(Boolean)).toBe(true)
+    expect(useGameStore.getState().level.goal).toEqual(originalGoal)
+    const saved = JSON.parse(localStorage.getItem('pillout-preferences')!)
+    expect(saved.state).not.toHaveProperty('rescue')
+    useGameStore.getState().newGame('zen')
+    expect(useGameStore.getState().rescue).toBeNull()
+    useGameStore.getState().newGame('classic')
+    await useGameStore.persist.rehydrate()
+    expect(useGameStore.getState().rescue!.covered.every(Boolean)).toBe(true)
+    expect(useGameStore.getState().rescue!.rescued).toEqual([])
   })
 })

@@ -10,8 +10,11 @@ import {
   shuffleBoard,
   FRUIT_KINDS,
   getLevelConfig,
+  createRescue,
+  resolveRescue,
+  goalReached,
 } from './engine'
-import type { Board, Kind, LevelConfig, Move } from './engine'
+import type { Board, Kind, LevelConfig, Move, RescueState } from './engine'
 import { MEDICINE_IDS } from './medicines'
 import type { MedicineId } from './medicines'
 import { playGameSound, stopGameSounds } from './audio'
@@ -21,7 +24,7 @@ import {
   REDUCED_SHUFFLE_DURATION,
   systemReducesMotion,
 } from './effects'
-import type { ClearWave, BoardRemix } from './effects'
+import type { ClearWave, BoardRemix, GameInput } from './effects'
 import { useDailyRewards } from '@/features/DailyRewards/hooks/useDailyRewards'
 
 export type Mode = 'classic' | 'zen'
@@ -36,6 +39,7 @@ interface GameState {
   board: Board
   kinds: readonly Kind[]
   level: LevelConfig
+  rescue: RescueState | null
   progress: Progress
   score: number
   best: number
@@ -55,8 +59,8 @@ interface GameState {
   session: number
   wave: ClearWave | null
   remix: BoardRemix | null
-  select: (index: number) => void
-  trySwap: (a: number, b: number) => Promise<void>
+  select: (index: number, input?: GameInput) => void
+  trySwap: (a: number, b: number, input?: GameInput) => Promise<void>
   newGame: (mode?: Mode) => void
   nextLevel: () => void
   setMedicines: (medicines: readonly MedicineId[]) => void
@@ -78,6 +82,7 @@ function roundConfig(progress: Progress, kinds: readonly Kind[], mode: Mode) {
   )
   return {
     level,
+    rescue: mode === 'classic' ? createRescue(level.goal) : null,
     moves: level.moves,
     message:
       mode === 'zen'
@@ -183,7 +188,7 @@ export const useGameStore = create<GameState>()(
         if (get().mode !== 'classic' || get().outcome !== 'won') return
         get().newGame('classic')
       },
-      select: (index) => {
+      select: (index, input = 'keyboard') => {
         const state = get()
         if (
           index < 0 ||
@@ -195,10 +200,10 @@ export const useGameStore = create<GameState>()(
           return
         if (state.selected === index) set({ selected: null })
         else if (state.selected !== null && adjacent(state.selected, index))
-          void get().trySwap(state.selected, index)
+          void get().trySwap(state.selected, index, input)
         else set({ selected: index, hint: null })
       },
-      trySwap: async (a, b) => {
+      trySwap: async (a, b, input = 'keyboard') => {
         const state = get()
         if (
           state.phase !== 'idle' ||
@@ -228,12 +233,18 @@ export const useGameStore = create<GameState>()(
           board = resolution.board
           const scoreBefore = get().score
           const score = scoreBefore + points
+          const rescue = resolveRescue(state.level.goal, get().rescue, resolution)
+          const previouslyRescued = new Set(get().rescue?.rescued)
+          const rescuedBears =
+            rescue?.rescued.filter((origin) => !previouslyRescued.has(origin)) ?? []
+          const collected = (rescue?.rescued.length ?? 0) - (get().rescue?.rescued.length ?? 0)
           set({
             board,
             phase: 'clearing',
             clearing: resolution.clearing,
             combo,
             score,
+            rescue,
             best: Math.max(get().best, score),
             cleared: get().cleared + resolution.clearing.length,
             wave: {
@@ -246,14 +257,19 @@ export const useGameStore = create<GameState>()(
               clearing: resolution.clearing,
               created: resolution.created,
               activations: resolution.activations,
+              rescuedBears,
+              input,
             },
-            message: resolution.activated.length
-              ? `${[...new Set(resolution.activated)].map((special) => special[0]!.toUpperCase() + special.slice(1)).join(' + ')}! +${points} points.`
-              : resolution.created.length
-                ? `Special tile earned! +${points} points. Swap it with a neighbor!`
-                : combo > 1
-                  ? `${combo}× cascade! +${points} points. Keep that flow.`
-                  : `Nice match! +${points} points.`,
+            message:
+              collected > 0
+                ? `Bear rescued! ${rescue!.rescued.length} of ${state.level.goal.type === 'bears' ? state.level.goal.bears.length : 0} saved. +${points} points.`
+                : resolution.activated.length
+                  ? `${[...new Set(resolution.activated)].map((special) => special[0]!.toUpperCase() + special.slice(1)).join(' + ')}! +${points} points.`
+                  : resolution.created.length
+                    ? `Special tile earned! +${points} points. Swap it with a neighbor!`
+                    : combo > 1
+                      ? `${combo}× cascade! +${points} points. Keep that flow.`
+                      : `Nice match! +${points} points.`,
           })
           if (get().sound)
             playGameSound(
@@ -271,7 +287,7 @@ export const useGameStore = create<GameState>()(
         const outcome =
           get().mode === 'zen'
             ? 'playing'
-            : get().score >= state.level.target
+            : goalReached(state.level.goal, get().score, get().rescue)
               ? 'won'
               : get().moves <= 0
                 ? 'lost'

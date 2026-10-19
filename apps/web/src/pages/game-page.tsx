@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
+import type { MouseEvent } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
   ArrowLeft,
@@ -28,9 +29,11 @@ import type { Mode } from '@/game/store'
 import { getLevelConfig } from '@/game/engine'
 import { AVATARS } from '@/features/PlayerSetup/constants'
 import { usePlayerSetup } from '@/features/PlayerSetup/hooks/usePlayerSetup'
+import { BearGoalCounter } from '@/features/BearRescue'
 import GameEffects, {
   CascadeTitle,
   ScoreCounter,
+  RoundOverlay,
   VictoryCelebration,
   useReducedMotion,
 } from '@/features/GameEffects'
@@ -51,6 +54,7 @@ export function GamePage() {
   const best = useGameStore((s) => s.best)
   const moves = useGameStore((s) => s.moves)
   const level = useGameStore((s) => s.level)
+  const rescue = useGameStore((s) => s.rescue)
   const progress = useGameStore((s) => s.progress)
   const kindCount = useGameStore((s) => s.kinds.length)
   const mode = useGameStore((s) => s.mode)
@@ -66,10 +70,17 @@ export function GamePage() {
   const avatarId = usePlayerSetup((s) => s.avatar)
   const avatar = AVATARS.find((option) => option.id === avatarId) ?? AVATARS[0]
   const [restart, setRestart] = useState<Mode | null>(null)
+  const [animatePause, setAnimatePause] = useState(false)
   const blocked = phase !== 'idle' || paused || outcome !== 'playing'
   const game = useGameStore.getState
   const retry = getLevelConfig(progress.level, kindCount, progress.losses)
   const pendingRewards = useDailyRewards((s) => s.days.filter((day) => !day.prize).length)
+  const rescueGoal = mode === 'classic' && level.goal.type === 'bears' ? level.goal : null
+
+  const togglePause = (event: MouseEvent<HTMLButtonElement>) => {
+    setAnimatePause(event.detail > 0)
+    game().togglePause()
+  }
 
   return (
     <section
@@ -93,13 +104,22 @@ export function GamePage() {
       <div className="game-dashboard">
         <div className="game-stat goal-stat" data-won={outcome === 'won' || undefined}>
           <h2>{mode === 'classic' ? 'Goal' : 'Score'}</h2>
-          <div>
-            <Trophy aria-hidden="true" />
-            <ScoreCounter key={session} score={score} />
-            <span>
-              {mode === 'classic' ? `/ ${level.target.toLocaleString()}` : 'keep your flow'}
-            </span>
-          </div>
+          {rescueGoal ? (
+            <BearGoalCounter
+              rescued={rescue?.rescued.length ?? 0}
+              required={rescueGoal.bears.length}
+            />
+          ) : (
+            <div>
+              <Trophy aria-hidden="true" />
+              <ScoreCounter key={session} score={score} />
+              <span>
+                {mode === 'classic' && level.goal.type === 'score'
+                  ? `/ ${level.goal.target.toLocaleString()}`
+                  : 'keep your flow'}
+              </span>
+            </div>
+          )}
         </div>
         <figure className="game-buddy" aria-label={`${avatar.name} avatar`}>
           <div className="avatar-portrait">
@@ -136,7 +156,17 @@ export function GamePage() {
         ) : combo > 1 && phase !== 'idle' ? (
           `${combo}× cascade! You’re on a roll!`
         ) : mode === 'classic' ? (
-          `Match your way to ${level.target.toLocaleString()}!`
+          rescueGoal ? (
+            rescueGoal.bears.length === 1 ? (
+              'Match to unlock the bear!'
+            ) : (
+              'Match to unlock the bears!'
+            )
+          ) : level.goal.type === 'score' ? (
+            `Match your way to ${level.goal.target.toLocaleString()}!`
+          ) : (
+            ''
+          )
         ) : (
           'Find your flow. Take your time.'
         )}
@@ -158,40 +188,34 @@ export function GamePage() {
               score={score}
               avatar={avatar}
               level={level.number}
+              rescuedBears={rescueGoal ? rescue?.rescued.length : undefined}
               onContinue={() => game().nextLevel()}
             />
           ) : (
-            (paused || outcome !== 'playing') && (
-              <div className="board-overlay">
-                {paused ? <Pause size={40} /> : <RotateCcw size={40} />}
-                <h2>
-                  {outcome === 'lost'
-                    ? `Level ${level.number} · Try again?`
-                    : 'Taking a little break'}
-                </h2>
-                <p>
-                  {outcome !== 'playing'
-                    ? `${score.toLocaleString()} of ${level.target.toLocaleString()} points. Your progress is safe.`
-                    : 'Your next great match can wait.'}
-                </p>
-                {outcome === 'lost' && retry.bonusMoves > 0 && (
-                  <p>Next try: +{retry.bonusMoves} extra moves. Same goal!</p>
-                )}
-                <Button
-                  className="candy-button"
-                  onClick={() =>
-                    paused && outcome === 'playing' ? game().togglePause() : game().newGame()
-                  }
-                >
-                  {paused && outcome === 'playing' ? 'Keep playing' : `Retry level ${level.number}`}
-                  <Play />
-                </Button>
-              </div>
-            )
+            <RoundOverlay
+              open={paused || outcome === 'lost'}
+              lost={outcome === 'lost'}
+              animate={outcome === 'lost' ? wave?.input === 'pointer' : animatePause}
+              level={level.number}
+              bonusMoves={retry.bonusMoves}
+              message={
+                outcome === 'lost'
+                  ? rescueGoal
+                    ? `${rescue?.rescued.length ?? 0} of ${rescueGoal.bears.length} bears rescued. Try uncovering the remaining bear cells!`
+                    : `${score.toLocaleString()} of ${level.goal.type === 'score' ? level.goal.target.toLocaleString() : 0} points. Your progress is safe.`
+                  : 'Your next great match can wait.'
+              }
+              onResume={togglePause}
+              onRetry={(event) => {
+                setAnimatePause(event.detail > 0)
+                game().newGame()
+              }}
+            />
           )}
         </div>
       </div>
       <div className="game-feedback">
+        {rescueGoal && <p className="rescue-score">Bonus score: {score.toLocaleString()}</p>}
         <h2>
           {score > 0
             ? `Nice move${nickname.trim() ? `, ${nickname.trim()}` : ''}!`
@@ -212,6 +236,14 @@ export function GamePage() {
         Swap a special with a neighbor to activate it. Bomb: 3 × 3. Hammer: row for a horizontal
         swap, column for a vertical swap. Crown: every object of its swap partner’s type.
       </p>
+      {rescueGoal && (
+        <p id="bear-rescue-help" className="sr-only">
+          Find {rescueGoal.bears.length} hidden {rescueGoal.bears.length === 1 ? 'bear' : 'bears'}.
+          Each bear covers two rows and two columns. Match pills on covered cells or hit them with
+          specials to uncover them. Reveal all four cells to rescue a bear. Shuffling keeps your
+          discoveries. Score is a bonus; rescue every bear before moves run out to win.
+        </p>
+      )}
       <div className="game-controls">
         <Button
           className="booster"
@@ -240,7 +272,7 @@ export function GamePage() {
         <Button
           className="booster"
           disabled={outcome !== 'playing'}
-          onClick={() => game().togglePause()}
+          onClick={togglePause}
           aria-label={paused ? 'Resume game' : 'Pause game'}
         >
           <span className="booster-orb">{paused ? <Play /> : <Pause />}</span>

@@ -12,6 +12,17 @@ export type Move = readonly [number, number]
 export type Random = () => number
 
 export type Difficulty = 'warmup' | 'breather' | 'steady' | 'challenge'
+export interface Bear {
+  origin: number
+  cells: readonly number[]
+}
+export type LevelGoal =
+  | { type: 'score'; target: number }
+  | { type: 'bears'; bears: readonly Bear[] }
+export interface RescueState {
+  covered: readonly boolean[]
+  rescued: readonly number[]
+}
 export interface LevelConfig {
   number: number
   chapter: number
@@ -19,7 +30,7 @@ export interface LevelConfig {
   difficulty: Difficulty
   label: string
   tip: string
-  target: number
+  goal: LevelGoal
   moves: number
   bonusMoves: number
 }
@@ -122,6 +133,7 @@ export function getLevelConfig(number: number, kindCount: number, losses = 0): L
     template.difficulty === 'challenge'
       ? minimumScore + ((baseline * template.moves) / 24 - minimumScore) * pressure
       : baseline * pressure
+  const goal = getLevelGoal(stage + 1, Math.max(1000, Math.round((target * growth) / 50) * 50))
   return {
     number,
     chapter: chapter + 1,
@@ -129,14 +141,59 @@ export function getLevelConfig(number: number, kindCount: number, losses = 0): L
     difficulty:
       chapter > 0 && stage < 3 ? (stage === 0 ? 'breather' : 'steady') : template.difficulty,
     label:
-      chapter > 0 && stage < 3
-        ? ['A fresh chapter', 'Find your rhythm', 'Build momentum'][stage]!
-        : template.label,
-    tip: template.tip,
-    target: Math.max(1000, Math.round((target * growth) / 50) * 50),
+      goal.type === 'bears'
+        ? goal.bears.length === 1
+          ? 'Find the bear'
+          : 'Find the bears'
+        : chapter > 0 && stage < 3
+          ? ['A fresh chapter', 'Find your rhythm', 'Build momentum'][stage]!
+          : template.label,
+    tip:
+      goal.type === 'bears' ? 'Match over the covering to reveal every hidden bear.' : template.tip,
+    goal,
     moves: template.moves + bonusMoves,
     bonusMoves,
   }
+}
+
+function getLevelGoal(stage: number, target: number): LevelGoal {
+  const origins = stage === 1 ? [27] : stage === 4 ? [17, 45] : stage === 8 ? [10, 29, 49] : null
+  return origins
+    ? {
+        type: 'bears',
+        bears: origins.map((origin) => ({
+          origin,
+          cells: [origin, origin + 1, origin + SIZE, origin + SIZE + 1],
+        })),
+      }
+    : { type: 'score', target }
+}
+
+export function createRescue(goal: LevelGoal): RescueState | null {
+  return goal.type === 'bears'
+    ? { covered: Array<boolean>(SIZE * SIZE).fill(true), rescued: [] }
+    : null
+}
+
+/** Covering belongs to board positions, including the positions earning a special. */
+export function resolveRescue(
+  goal: LevelGoal,
+  rescue: RescueState | null,
+  resolution: Pick<Resolution, 'clearing' | 'created'>,
+): RescueState | null {
+  if (goal.type !== 'bears' || !rescue) return null
+  const covered = [...rescue.covered]
+  for (const index of [...resolution.clearing, ...resolution.created]) covered[index] = false
+  return {
+    covered,
+    rescued: goal.bears
+      .filter((bear) => bear.cells.every((index) => !covered[index]))
+      .map((bear) => bear.origin),
+  }
+}
+
+export function goalReached(goal: LevelGoal, score: number, rescue: RescueState | null): boolean {
+  return goal.type === 'score' ? score >= goal.target : rescue?.rescued.length === goal.bears.length
 }
 
 let nextId = 0

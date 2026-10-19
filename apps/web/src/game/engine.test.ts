@@ -11,6 +11,9 @@ import {
   shuffleBoard,
   getLevelConfig,
   KINDS,
+  createRescue,
+  resolveRescue,
+  goalReached,
 } from './engine'
 import type { Board } from './engine'
 
@@ -29,6 +32,12 @@ function cleanBoard(): Board {
   }))
 }
 
+function scoreTarget(number: number, kinds: number) {
+  const { goal } = getLevelConfig(number, kinds)
+  if (goal.type !== 'score') throw new Error('Expected score goal')
+  return goal.target
+}
+
 describe('level difficulty', () => {
   it('places gentler levels after challenges for every supported tile pool', () => {
     for (let kinds = 3; kinds <= KINDS.length; kinds++) {
@@ -37,36 +46,37 @@ describe('level difficulty', () => {
         const recovery = getLevelConfig(peak + 1, kinds)
         expect(challenge.difficulty).toBe('challenge')
         expect(recovery.difficulty).toBe('breather')
-        expect(recovery.target / recovery.moves).toBeLessThan(challenge.target / challenge.moves)
       }
+      expect(scoreTarget(6, kinds) / getLevelConfig(6, kinds).moves).toBeLessThan(
+        scoreTarget(5, kinds) / getLevelConfig(5, kinds).moves,
+      )
     }
   })
 
   it('ramps onboarding once and caps later difficulty growth', () => {
-    expect(getLevelConfig(1, 3).target).toBeLessThan(getLevelConfig(2, 3).target)
-    expect(getLevelConfig(2, 3).target).toBeLessThan(getLevelConfig(3, 3).target)
+    expect(scoreTarget(2, 3)).toBeLessThan(scoreTarget(3, 3))
     expect(getLevelConfig(11, 3).difficulty).toBe('breather')
-    expect(getLevelConfig(21, 3).target).toBeGreaterThan(getLevelConfig(11, 3).target)
-    expect(getLevelConfig(110, 3).target).toBe(getLevelConfig(1000, 3).target)
+    expect(scoreTarget(22, 3)).toBeGreaterThan(scoreTarget(12, 3))
+    expect(scoreTarget(110, 3)).toBe(scoreTarget(1000, 3))
   })
 
   it('compensates for additional match kinds without changing scoring or tile pools', () => {
-    for (const number of [1, 5, 10, 50]) {
+    for (const number of [2, 5, 10, 50]) {
       let previous = Infinity
       for (let kinds = 3; kinds <= KINDS.length; kinds++) {
-        const level = getLevelConfig(number, kinds)
-        expect(level.target).toBeLessThanOrEqual(previous)
-        expect(level.target).toBeGreaterThanOrEqual(1000)
-        expect(level.target % 50).toBe(0)
-        previous = level.target
+        const target = scoreTarget(number, kinds)
+        expect(target).toBeLessThanOrEqual(previous)
+        expect(target).toBeGreaterThanOrEqual(1000)
+        expect(target % 50).toBe(0)
+        previous = target
       }
     }
   })
 
   it('requires more than ordinary three-tile matches to pass a challenge, even with all medicines', () => {
-    for (const number of [5, 8, 10]) {
+    for (const number of [5, 10]) {
       const level = getLevelConfig(number, KINDS.length)
-      expect(level.target).toBeGreaterThan(level.moves * 150)
+      expect(scoreTarget(number, KINDS.length)).toBeGreaterThan(level.moves * 150)
     }
   })
 
@@ -82,7 +92,7 @@ describe('level difficulty', () => {
       [100, 6],
     ]) {
       const retry = getLevelConfig(10, 6, losses!)
-      expect(retry.target).toBe(base.target)
+      expect(retry.goal).toEqual(base.goal)
       expect(retry.moves).toBe(base.moves + bonus!)
       expect(retry.bonusMoves).toBe(bonus)
     }
@@ -95,6 +105,66 @@ describe('level difficulty', () => {
       expect(() => getLevelConfig(1, kinds)).toThrow(RangeError)
     for (const losses of [-1, NaN, Infinity, 1.5])
       expect(() => getLevelConfig(1, 3, losses)).toThrow(RangeError)
+  })
+})
+
+describe('bear-rescue rules', () => {
+  it('mixes fixed rescue layouts into every chapter, independent of medicines and retry help', () => {
+    for (const chapter of [0, 1, 7, 100]) {
+      for (let stage = 1; stage <= 10; stage++) {
+        const number = chapter * 10 + stage
+        const goal = getLevelConfig(number, 3).goal
+        const required = stage === 1 ? 1 : stage === 4 ? 2 : stage === 8 ? 3 : 0
+        expect(goal.type).toBe(required ? 'bears' : 'score')
+        if (goal.type !== 'bears') continue
+        expect(goal.bears).toHaveLength(required)
+        expect(getLevelConfig(number, KINDS.length, 6).goal).toEqual(goal)
+        const occupied = goal.bears.flatMap((bear) => [...bear.cells])
+        expect(new Set(occupied).size).toBe(required * 4)
+        for (const bear of goal.bears) {
+          expect(bear.cells).toEqual([
+            bear.origin,
+            bear.origin + 1,
+            bear.origin + SIZE,
+            bear.origin + SIZE + 1,
+          ])
+          expect(bear.cells.every((index) => index >= 0 && index < SIZE * SIZE)).toBe(true)
+          expect(bear.origin % SIZE).toBeLessThan(SIZE - 1)
+        }
+      }
+    }
+  })
+
+  it('reveals only hit cells, counts earned-special cells, and collects only fully revealed bears', () => {
+    const goal = getLevelConfig(1, 3).goal
+    const initial = createRescue(goal)!
+    expect(initial.covered.every(Boolean)).toBe(true)
+    expect(goalReached(goal, 1000000, initial)).toBe(false)
+    const partial = resolveRescue(goal, initial, { clearing: [27, 28, 35, 27], created: [] })!
+    expect(partial.rescued).toEqual([])
+    expect(partial.covered[26]).toBe(true)
+    expect(partial.covered[36]).toBe(true)
+    expect(initial.covered[27]).toBe(true)
+    const complete = resolveRescue(goal, partial, { clearing: [], created: [36] })!
+    expect(complete.rescued).toEqual([27])
+    expect(complete.covered.filter(Boolean)).toHaveLength(60)
+    expect(goalReached(goal, 0, complete)).toBe(true)
+    expect(resolveRescue(goal, complete, { clearing: [27, 36], created: [] })).toEqual(complete)
+  })
+
+  it('requires every bear, while score goals and Zen need no rescue state', () => {
+    const goal = getLevelConfig(4, 3).goal
+    if (goal.type !== 'bears') throw new Error('Expected bears')
+    const partial = resolveRescue(goal, createRescue(goal), {
+      clearing: [...goal.bears[0]!.cells],
+      created: [],
+    })!
+    expect(partial.rescued).toHaveLength(1)
+    expect(goalReached(goal, 1000000, partial)).toBe(false)
+    const scoreGoal = getLevelConfig(2, 3).goal
+    expect(createRescue(scoreGoal)).toBeNull()
+    expect(resolveRescue(goal, null, { clearing: [27], created: [] })).toBeNull()
+    expect(goalReached(scoreGoal, scoreTarget(2, 3), null)).toBe(true)
   })
 })
 
