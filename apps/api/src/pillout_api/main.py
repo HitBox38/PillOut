@@ -1,10 +1,12 @@
 """ASGI application entry point, independent of any hosting provider."""
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal, cast
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from .database import (
@@ -300,7 +302,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await app.state.db.close()
 
 
-app = FastAPI(title="Pillout API", version="0.1.0", lifespan=lifespan)
 router = APIRouter(prefix="/api")
 
 
@@ -623,5 +624,19 @@ async def delete_user_avatar(body: UserAvatarIdRequest, db: DbDep) -> None:
     await db.execute("DELETE FROM user_avatars WHERE id = ?", [body.id])
 
 
-app.include_router(router)
-app.include_router(demo_router)
+def create_app() -> FastAPI:
+    application = FastAPI(title="Pillout API", version="0.1.0", lifespan=lifespan)
+    origins = [origin.strip() for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")]
+    if allowed_origins := [origin for origin in origins if origin]:
+        application.add_middleware(
+            CORSMiddleware,
+            allow_origins=allowed_origins,
+            allow_methods=["GET", "POST", "PATCH"],
+            allow_headers=["Content-Type"],
+        )
+    application.include_router(router)
+    application.include_router(demo_router)
+    return application
+
+
+app = create_app()
