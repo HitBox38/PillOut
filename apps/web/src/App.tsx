@@ -1,9 +1,11 @@
+import { useEffect } from 'react'
 import {
   createRootRoute,
   createRoute,
   createRouter,
   Link,
   RouterProvider,
+  redirect,
 } from '@tanstack/react-router'
 import { ChevronRight, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,8 +15,13 @@ import PlayerSetup from '@/features/PlayerSetup'
 import PageTransitions from '@/features/PageTransitions'
 import { GamePage } from '@/pages/game-page'
 import DailyRewards from '@/features/DailyRewards'
+import { usePlayerSetup } from '@/features/PlayerSetup/hooks/usePlayerSetup'
 
 function Layout() {
+  useEffect(() => {
+    void usePlayerSetup.getState().restoreProfile()
+  }, [])
+
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -139,7 +146,14 @@ const rootRoute = createRootRoute({
     </section>
   ),
 })
-const introRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: Intro })
+const introRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/',
+  beforeLoad: () => {
+    if (usePlayerSetup.getState().userId !== null) throw redirect({ to: '/play', replace: true })
+  },
+  component: Intro,
+})
 const welcomeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/welcome',

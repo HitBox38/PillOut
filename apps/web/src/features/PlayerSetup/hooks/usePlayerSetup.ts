@@ -1,8 +1,10 @@
 import { create } from 'zustand'
 import { useGameStore } from '@/game/store'
+import { ApiError } from '@/lib/api'
 import type { MedicineId } from '@/game/medicines'
 import type { CatalogAvatar, CatalogPill, PillSchedule } from '../types'
 import { loadCatalogs, loadPlayer, savePlayer } from '../api'
+import { getSavedPlayerId, rememberPlayerId } from '../helpers'
 
 interface PlayerState {
   userId: number | null
@@ -12,7 +14,9 @@ interface PlayerState {
   catalogError: string | null
   saveStatus: 'idle' | 'saving' | 'error'
   saveError: string | null
+  restoreStatus: 'idle' | 'loading' | 'ready' | 'error'
   loadCatalogs: () => Promise<void>
+  restoreProfile: () => Promise<void>
   saveProfile: () => Promise<boolean>
   name: string
   surname: string
@@ -28,29 +32,58 @@ interface PlayerState {
   updateSchedule: (id: string, values: Partial<PillSchedule>) => void
 }
 
-// Drafts and the current player ID stay in memory. Only explicit profile saves reach the API.
+let catalogRequest: Promise<void> | null = null
+
+// Remember only the saved identity; drafts and patient plans stay in memory.
 export const usePlayerSetup = create<PlayerState>((set, get) => ({
-  userId: null,
+  userId: getSavedPlayerId(),
   pills: [],
   avatars: [],
   catalogStatus: 'idle',
   catalogError: null,
   saveStatus: 'idle',
   saveError: null,
+  restoreStatus: 'idle',
   loadCatalogs: async () => {
-    if (get().catalogStatus === 'loading' || get().catalogStatus === 'ready') return
+    if (get().catalogStatus === 'ready') return
+    if (catalogRequest) return catalogRequest
     set({ catalogStatus: 'loading', catalogError: null })
+    catalogRequest = (async () => {
+      try {
+        const catalogs = await loadCatalogs()
+        const avatar = catalogs.avatars.some((option) => option.id === get().avatar)
+          ? get().avatar
+          : catalogs.avatars[0]!.id
+        set({ ...catalogs, avatar, catalogStatus: 'ready' })
+      } catch (error) {
+        set({
+          catalogStatus: 'error',
+          catalogError: error instanceof Error ? error.message : 'Could not load player choices.',
+        })
+      } finally {
+        catalogRequest = null
+      }
+    })()
+    return catalogRequest
+  },
+  restoreProfile: async () => {
+    const { userId, restoreStatus } = get()
+    if (userId === null || restoreStatus === 'loading' || restoreStatus === 'ready') return
+    set({ restoreStatus: 'loading' })
     try {
-      const catalogs = await loadCatalogs()
-      const avatar = catalogs.avatars.some((option) => option.id === get().avatar)
-        ? get().avatar
-        : catalogs.avatars[0]!.id
-      set({ ...catalogs, avatar, catalogStatus: 'ready' })
+      await get().loadCatalogs()
+      if (get().catalogStatus !== 'ready') {
+        set({ restoreStatus: 'error' })
+        return
+      }
+      const { id, ...profile } = await loadPlayer(userId, get().avatars)
+      set({ ...profile, userId: id, restoreStatus: 'ready' })
     } catch (error) {
-      set({
-        catalogStatus: 'error',
-        catalogError: error instanceof Error ? error.message : 'Could not load player choices.',
-      })
+      if (error instanceof ApiError && error.status === 404) {
+        rememberPlayerId(null)
+        set({ userId: null })
+      }
+      set({ restoreStatus: 'error' })
     }
   },
   saveProfile: async () => {
@@ -66,8 +99,9 @@ export const usePlayerSetup = create<PlayerState>((set, get) => ({
       const saved = await savePlayer(draft, avatar.databaseId, draft.userId)
       // Retain the ID before read-back: a failed read can be retried without creating another user.
       set({ userId: saved.id })
+      rememberPlayerId(saved.id)
       const { id, ...profile } = await loadPlayer(saved.id, draft.avatars)
-      set({ ...profile, userId: id, saveStatus: 'idle' })
+      set({ ...profile, userId: id, saveStatus: 'idle', restoreStatus: 'ready' })
       return true
     } catch (error) {
       set({

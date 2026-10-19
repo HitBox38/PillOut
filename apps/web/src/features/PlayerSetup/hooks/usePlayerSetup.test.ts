@@ -23,6 +23,7 @@ const json = (value: unknown) => new Response(JSON.stringify(value))
 const fetchMock = vi.fn<typeof fetch>()
 
 beforeEach(() => {
+  localStorage.removeItem('pillout-player-id')
   usePlayerSetup.setState(usePlayerSetup.getInitialState(), true)
   fetchMock.mockReset()
   fetchMock.mockImplementation(async (url) => {
@@ -95,6 +96,7 @@ describe('player setup', () => {
     setup.update({ name: ' Ariel ', surname: ' Levi ', nickname: ' Super Ariel ' })
     expect(await setup.saveProfile()).toBe(true)
     expect(usePlayerSetup.getState()).toMatchObject({ ...userProfile(), saveStatus: 'idle' })
+    expect(localStorage.getItem('pillout-player-id')).toBe('42')
     expect(fetchMock.mock.calls[2]).toMatchObject([
       '/api/user',
       {
@@ -121,6 +123,7 @@ describe('player setup', () => {
     const saving = setup.saveProfile()
     expect(await setup.saveProfile()).toBe(false)
     expect(await saving).toBe(false)
+    expect(localStorage.getItem('pillout-player-id')).toBeNull()
     expect(usePlayerSetup.getState()).toMatchObject({
       userId: null,
       name: 'Ariel',
@@ -140,8 +143,68 @@ describe('player setup', () => {
       .mockResolvedValueOnce(new Response('', { status: 500 }))
     expect(await setup.saveProfile()).toBe(false)
     expect(usePlayerSetup.getState().userId).toBe(42)
+    expect(localStorage.getItem('pillout-player-id')).toBe('42')
     expect(await setup.saveProfile()).toBe(true)
     expect(fetchMock.mock.calls[4]?.[1]).toMatchObject({ method: 'PATCH' })
+  })
+
+  it('recovers the saved player after a fresh app load and edits that same user', async () => {
+    const setup = usePlayerSetup.getState()
+    await setup.loadCatalogs()
+    setup.update({ name: 'Ariel', surname: 'Levi', nickname: 'Super Ariel' })
+    await setup.saveProfile()
+
+    // A fresh module reads the remembered ID, without retaining in-memory drafts.
+    vi.resetModules()
+    const { usePlayerSetup: reopened } = await import('./usePlayerSetup')
+    expect(reopened.getState()).toMatchObject({ userId: 42, nickname: '', selectedPills: [] })
+    fetchMock.mockClear()
+    await reopened.getState().restoreProfile()
+    expect(reopened.getState()).toMatchObject({ ...userProfile(), restoreStatus: 'ready' })
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    reopened.getState().update({ nickname: 'New nickname' })
+    await reopened.getState().saveProfile()
+    expect(fetchMock.mock.calls[3]?.[1]).toMatchObject({ method: 'PATCH' })
+    expect(JSON.parse(fetchMock.mock.calls[3]?.[1]?.body as string).id).toBe(42)
+  })
+
+  it('restores once even when setup is already loading catalogs', async () => {
+    usePlayerSetup.setState({ userId: 42 })
+    const catalogs = usePlayerSetup.getState().loadCatalogs()
+    const restoring = usePlayerSetup.getState().restoreProfile()
+    await usePlayerSetup.getState().restoreProfile()
+    await catalogs
+    await restoring
+    await usePlayerSetup.getState().restoreProfile()
+    expect(usePlayerSetup.getState()).toMatchObject({ ...userProfile(), restoreStatus: 'ready' })
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('does not request a profile for a new visitor', async () => {
+    await usePlayerSetup.getState().restoreProfile()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('retains the remembered ID on transient recovery failures and allows retry', async () => {
+    localStorage.setItem('pillout-player-id', '42')
+    usePlayerSetup.setState({ userId: 42 })
+    await usePlayerSetup.getState().loadCatalogs()
+    fetchMock.mockResolvedValueOnce(new Response('', { status: 503 }))
+    await usePlayerSetup.getState().restoreProfile()
+    expect(usePlayerSetup.getState()).toMatchObject({ userId: 42, restoreStatus: 'error' })
+    expect(localStorage.getItem('pillout-player-id')).toBe('42')
+    await usePlayerSetup.getState().restoreProfile()
+    expect(usePlayerSetup.getState()).toMatchObject({ ...userProfile(), restoreStatus: 'ready' })
+  })
+
+  it('clears a remembered ID only when the saved player no longer exists', async () => {
+    localStorage.setItem('pillout-player-id', '42')
+    usePlayerSetup.setState({ userId: 42 })
+    await usePlayerSetup.getState().loadCatalogs()
+    fetchMock.mockResolvedValueOnce(new Response('', { status: 404 }))
+    await usePlayerSetup.getState().restoreProfile()
+    expect(usePlayerSetup.getState().userId).toBeNull()
+    expect(localStorage.getItem('pillout-player-id')).toBeNull()
   })
 })
 
