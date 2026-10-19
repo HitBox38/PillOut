@@ -63,3 +63,11 @@ uv run --locked --no-dev uvicorn pillout_api.main:app --host 0.0.0.0 --port 8000
 The database client is configured in `pillout_api.database` from `TURSO_*` environment variables. Root `vercel.json` selects `src.pillout_api.main:app` relative to this directory, installs runtime dependencies with `uv sync --locked --no-dev --no-install-project`, and includes `schema.sql` in the Python function. The app loads directly from the bundled source; package-relative imports keep it independent of editable-install paths from the build machine. The build command checks that this entry point imports without connecting to Turso. Routing sends `/api/*`, `/docs`, `/redoc`, and `/openapi.json` to this service without stripping their paths. The pnpm `build` wrapper still builds the independent Python distribution; Vercel packages the ASGI function directly.
 
 Authentication and shared game state remain outside this deployment setup. The frontend saves player profiles and selected avatars; patient plans and gameplay remain in the browser.
+
+## Cross-origin frontends (itch.io)
+
+Set `CORS_ALLOWED_ORIGINS` in the API deployment environment to a comma-separated list of exact frontend origins, then deploy code containing the CORS middleware. Adding the variable to a deployment without the middleware has no effect. An unset or empty value keeps cross-origin access disabled.
+
+For itch.io, use the origin serving the uploaded game files (typically `https://html-classic.itch.zone`), rather than the project page's `username.itch.io` origin. Confirm the request's `Origin` in browser developer tools. Include only the scheme, hostname, and optional port, without a trailing slash or path.
+
+Configured origins can make JSON `POST` and `PATCH` requests and health `GET` requests. The middleware answers their `OPTIONS` preflight requests. Cookies and cross-origin credentials are not enabled. Same-origin requests keep working without this setting.
