@@ -5,7 +5,7 @@ import {
   Link,
   RouterProvider,
 } from '@tanstack/react-router'
-import { ArrowLeft, ChevronRight, Heart } from 'lucide-react'
+import { ChevronRight, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Artwork, GameLogo } from '@/components/artwork'
 import { SPECIAL_ART } from '@/lib/art-assets'
@@ -57,7 +57,7 @@ function HowToPlay() {
   return (
     <section className="mobile-screen help-screen">
       <Link to="/play" className="back-link">
-        <ArrowLeft /> Back to game
+        <img src="/art/back.png" alt="" className="back-art" draggable={false} /> Back to game
       </Link>
       <GameLogo />
       <h1>Ready, set, match!</h1>

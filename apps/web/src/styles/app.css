@@ -119,6 +119,43 @@ legend,
   width: 19px;
   height: 19px;
 }
+.art-button,
+.art-button[data-slot='button'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+}
+.art-button img,
+.back-art {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+.art-button:active img,
+.back-link:active .back-art {
+  filter: brightness(0.9);
+}
+html[data-navigation-input='pointer']:not([data-reduced-motion]) :is(.art-button img, .back-art) {
+  transition: transform 160ms var(--ease-out);
+}
+html[data-navigation-input='pointer']:not([data-reduced-motion])
+  :is(.art-button:active img, .back-link:active .back-art) {
+  transform: scale(0.97);
+  transition-duration: 100ms;
+}
 .step-label {
   font-size: 9px;
   font-weight: 700;
@@ -495,7 +532,7 @@ fieldset {
   min-height: 0;
   height: var(--game-height);
   display: grid;
-  grid-template-rows: 40px var(--hud-height) auto minmax(0, 1fr) auto auto;
+  grid-template-rows: 44px var(--hud-height) auto minmax(0, 1fr) auto auto;
   gap: clamp(3px, 0.6dvh, 6px);
   background: radial-gradient(ellipse at 50% 40%, #0879fc, #0057d7 62%, #0048b8);
   padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
@@ -978,6 +1015,32 @@ fieldset {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+@media (max-height: 650px) {
+  .game-settings-dialog {
+    gap: 8px;
+    padding: 16px;
+  }
+  .game-settings-dialog [data-slot='dialog-header'] {
+    gap: 4px;
+  }
+  .game-settings-dialog [data-slot='dialog-title'] {
+    font-size: 24px;
+  }
+  .game-settings-dialog [data-slot='dialog-description'] {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
+@media (min-width: 600px) and (max-height: 500px) {
+  .game-settings-dialog {
+    width: min(640px, calc(100% - 32px));
+    max-width: calc(100% - 32px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .game-settings-dialog [data-slot='dialog-header'] {
+    grid-column: 1 / -1;
+  }
 }
 .help-screen {
   display: flex;

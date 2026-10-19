@@ -2,7 +2,6 @@ import { lazy, Suspense, useState } from 'react'
 import type { MouseEvent } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
-  ArrowLeft,
   CircleHelp,
   Gift,
   Lightbulb,
@@ -38,6 +37,7 @@ import GameEffects, {
   useReducedMotion,
 } from '@/features/GameEffects'
 import { useDailyRewards } from '@/features/DailyRewards/hooks/useDailyRewards'
+import GameMenu from '@/features/GameMenu'
 
 const GameBoard = lazy(() =>
   import('@/components/game-board').then((module) => ({ default: module.GameBoard })),
@@ -70,6 +70,7 @@ export function GamePage() {
   const avatarId = usePlayerSetup((s) => s.avatar)
   const avatar = AVATARS.find((option) => option.id === avatarId) ?? AVATARS[0]
   const [restart, setRestart] = useState<Mode | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [animatePause, setAnimatePause] = useState(false)
   const blocked = phase !== 'idle' || paused || outcome !== 'playing'
   const game = useGameStore.getState
@@ -89,17 +90,15 @@ export function GamePage() {
       data-reduced={reducedMotion || undefined}
     >
       <div className="screen-topline game-topline">
-        <Link to="/" className="back-link" aria-label="Back to home">
-          <ArrowLeft />
+        <Link to="/" className="art-button" aria-label="Back to home">
+          <img src="/art/back.png" alt="" draggable={false} />
         </Link>
         <span className="step-label">
           {mode === 'classic'
             ? `CHAPTER ${level.chapter} · ${DIFFICULTY_LABELS[level.difficulty]}`
             : 'ZEN ADVENTURE'}
         </span>
-        <Link className="back-link" to="/how-to-play" aria-label="How to play">
-          <CircleHelp />
-        </Link>
+        <GameMenu onSettings={() => setSettingsOpen(true)} />
       </div>
       <div className="game-dashboard">
         <div className="game-stat goal-stat" data-won={outcome === 'won' || undefined}>
@@ -278,7 +277,7 @@ export function GamePage() {
           <span className="booster-orb">{paused ? <Play /> : <Pause />}</span>
           <span>{paused ? 'Resume' : 'Pause'}</span>
         </Button>
-        <GameSettings onRestart={setRestart} />
+        <GameSettings open={settingsOpen} onOpenChange={setSettingsOpen} onRestart={setRestart} />
       </div>
       <GameEffects />
       <Dialog
@@ -316,13 +315,20 @@ export function GamePage() {
   )
 }
 
-function GameSettings({ onRestart }: { onRestart: (mode: Mode) => void }) {
+function GameSettings({
+  open,
+  onOpenChange,
+  onRestart,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onRestart: (mode: Mode) => void
+}) {
   const sound = useGameStore((s) => s.sound)
   const reducedMotion = useGameStore((s) => s.reducedMotion)
   const mode = useGameStore((s) => s.mode)
-  const [open, setOpen] = useState(false)
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger
         render={<Button className="booster settings-booster" aria-label="Game settings" />}
       >
@@ -331,7 +337,7 @@ function GameSettings({ onRestart }: { onRestart: (mode: Mode) => void }) {
         </span>
         <span>Settings</span>
       </DialogTrigger>
-      <DialogContent className="game-dialog">
+      <DialogContent className="game-dialog game-settings-dialog">
         <DialogHeader>
           <DialogTitle>Make it your game</DialogTitle>
           <DialogDescription>
@@ -357,7 +363,7 @@ function GameSettings({ onRestart }: { onRestart: (mode: Mode) => void }) {
         <Button
           variant="outline"
           onClick={() => {
-            setOpen(false)
+            onOpenChange(false)
             onRestart(mode === 'classic' ? 'zen' : 'classic')
           }}
         >
@@ -365,7 +371,7 @@ function GameSettings({ onRestart }: { onRestart: (mode: Mode) => void }) {
         </Button>
         <Button
           onClick={() => {
-            setOpen(false)
+            onOpenChange(false)
             onRestart(mode)
           }}
         >
@@ -373,6 +379,9 @@ function GameSettings({ onRestart }: { onRestart: (mode: Mode) => void }) {
         </Button>
         <Button nativeButton={false} render={<Link to="/pills" />} variant="link">
           Edit demo pill plan
+        </Button>
+        <Button nativeButton={false} render={<Link to="/how-to-play" />} variant="link">
+          <CircleHelp /> How to play
         </Button>
       </DialogContent>
     </Dialog>

@@ -27,6 +27,8 @@ export function usePageTransitions() {
   }, [])
 
   useEffect(() => {
+    const root = document.documentElement
+    root.toggleAttribute('data-reduced-motion', reducedMotion)
     let animateNavigation = false
     let animation: Animation | undefined
     let heldAnimation: Animation | undefined
@@ -50,6 +52,7 @@ export function usePageTransitions() {
     const onPointerDown = (event: PointerEvent) => {
       if (!event.isPrimary || event.button !== 0) return
       pointerInput.current = true
+      root.dataset.navigationInput = 'pointer'
       if (
         animation &&
         (animation.playState === 'running' || animation.playState === 'paused') &&
@@ -71,6 +74,7 @@ export function usePageTransitions() {
     }
     const onKeyDown = () => {
       pointerInput.current = false
+      delete root.dataset.navigationInput
       cancel()
     }
     const onClick = (event: MouseEvent) => {
@@ -130,6 +134,8 @@ export function usePageTransitions() {
 
     return () => {
       cancel()
+      root.removeAttribute('data-reduced-motion')
+      delete root.dataset.navigationInput
       unsubscribeBeforeNavigate()
       unsubscribeRendered()
       document.removeEventListener('pointerdown', onPointerDown, true)

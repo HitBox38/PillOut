@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router'
-import { X } from 'lucide-react'
 import { Artwork } from '@/components/artwork'
 
 export default function RewardsHeader({ choices = false }: { choices?: boolean }) {
@@ -10,10 +9,10 @@ export default function RewardsHeader({ choices = false }: { choices?: boolean }
       </Link>
       <Link
         to={choices ? '/rewards' : '/play'}
-        className="rewards-close"
+        className="rewards-close art-button"
         aria-label={choices ? 'Back to daily rewards' : 'Back to game'}
       >
-        <X />
+        <img src="/art/back.png" alt="" draggable={false} />
       </Link>
       <Artwork source="prizes" crop={[38, 0, 664, 249]} className="rewards-buddies" />
       <div className="rewards-title-plaque">

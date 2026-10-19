@@ -1,5 +1,4 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
 import { GameLogo } from '@/components/artwork'
 import { useGameStore } from '@/game/store'
 import Welcome from './components/Welcome'
@@ -22,10 +21,10 @@ export default function PlayerSetup({ step }: Props) {
       <div className="screen-topline">
         <Link
           to={actualStep === 'welcome' ? '/' : actualStep === 'pills' ? '/welcome' : '/pills'}
-          className="back-link"
+          className="art-button"
           aria-label="Go back"
         >
-          <ArrowLeft />
+          <img src="/art/back.png" alt="" draggable={false} />
         </Link>
         <span className="step-label">
           {actualStep === 'welcome' ? 'YOUR ADVENTURE STARTS HERE' : 'LET’S MAKE IT YOURS'}
