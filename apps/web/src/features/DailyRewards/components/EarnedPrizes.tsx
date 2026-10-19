@@ -6,9 +6,21 @@ import { useRewardPagination } from '../hooks/useRewardPagination'
 import { useRewardViewport } from '../hooks/useRewardViewport'
 import RewardPager from './RewardPager'
 import PrizeArt from './PrizeArt'
+import type { RewardDay } from '../types'
 
-export default function EarnedPrizes({ onClose }: { onClose: () => void }) {
-  const days = useDailyRewards((s) => s.days)
+export default function EarnedPrizes({
+  onClose,
+  sharedDays,
+  onReceive,
+  pending = false,
+}: {
+  onClose: () => void
+  sharedDays?: RewardDay[]
+  onReceive?: (date: string) => Promise<boolean>
+  pending?: boolean
+}) {
+  const localDays = useDailyRewards((s) => s.days)
+  const days = sharedDays ?? localDays
   const waiting = days.filter((day) => day.prize && !day.received)
   const pager = useRewardPagination(waiting, 1)
   const height = useRewardViewport()
@@ -46,7 +58,12 @@ export default function EarnedPrizes({ onClose }: { onClose: () => void }) {
             <Button
               className="candy-button"
               aria-label={`Mark ${day.prize!.name} from ${day.date} as received`}
-              onClick={() => useDailyRewards.getState().markReceived(day.date)}
+              disabled={pending}
+              onClick={() =>
+                onReceive
+                  ? void onReceive(day.date)
+                  : useDailyRewards.getState().markReceived(day.date)
+              }
             >
               <Check />
               Received

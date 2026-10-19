@@ -1,0 +1,654 @@
+.demo-viewport {
+  min-height: 0;
+  overflow: hidden;
+}
+.demo-viewport[data-compact='true']:has(input:focus) .demo-heading,
+.demo-viewport[data-compact='true']:has(input:focus) .demo-status-card,
+.demo-viewport[data-compact='true']:has(input:focus) .demo-footnote,
+.demo-viewport[data-compact='true']:has(input:focus) .demo-medical-heading,
+.demo-viewport[data-compact='true']:has(input:focus) .demo-medicines,
+.demo-viewport[data-compact='true']:has(input:focus) .demo-pager,
+.demo-viewport[data-compact='true']:has(input:focus) .demo-lobby .game-logo,
+.demo-viewport[data-compact='true']:has(input:focus) .demo-lobby .demo-role-list,
+.demo-viewport[data-compact='true']:has(input:focus) .demo-lobby-actions > .candy-button {
+  display: none;
+}
+.demo-topline .back-link {
+  min-width: 44px;
+  min-height: 44px;
+}
+.demo-medical-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.demo-medical-heading button {
+  min-height: 40px;
+  background: #244fbe;
+  color: white;
+}
+.demo-medical-heading h2 {
+  margin: 0;
+}
+.shared-rewards-error {
+  position: absolute;
+  z-index: 20;
+  top: 8px;
+  left: 12px;
+  right: 12px;
+  padding: 8px;
+  border: 1px solid #ffa2ce;
+  border-radius: 12px;
+  background: #581b4f;
+  font-size: 12px;
+}
+.demo-leave {
+  text-align: center;
+  min-height: 44px;
+  padding: 10px;
+}
+.app-shell:has(.demo-viewport),
+.app-shell:has(.demo-viewport) #main-content {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.mobile-screen.demo-screen {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.8dvh, 16px);
+  padding: 12px 18px max(12px, env(safe-area-inset-bottom));
+}
+.demo-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.demo-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.demo-heading {
+  text-align: center;
+  flex-shrink: 0;
+}
+.demo-heading h1 {
+  font-size: clamp(26px, 4.6dvh, 36px);
+  line-height: 1.15;
+  margin: 5px 0;
+}
+.demo-heading p,
+.demo-panel p {
+  color: #d3e1ff;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.demo-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #b7ffe2;
+  font-size: 11px;
+}
+.demo-code-line {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+.demo-code-line strong {
+  color: #fff31a;
+  letter-spacing: 1px;
+}
+.demo-code-line span {
+  border-left: 1px solid #6b92d4;
+  padding-left: 8px;
+  font-size: 11px;
+}
+.demo-panel {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.5dvh, 14px);
+  min-height: 0;
+  flex: 1;
+  justify-content: center;
+}
+.demo-panel h2 {
+  font-size: clamp(21px, 3.5dvh, 27px);
+  line-height: 1.15;
+  margin-bottom: 5px;
+}
+.demo-panel > .candy-button {
+  margin-top: auto;
+}
+.demo-screen .candy-button {
+  width: 100%;
+  min-height: 44px;
+  height: 48px;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.demo-screen fieldset {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+.demo-screen input {
+  font: inherit;
+}
+.demo-role-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.demo-role {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+  border-radius: 18px;
+  border: 2px solid #6f9aff55;
+  background: #0a278d;
+  position: relative;
+  cursor: pointer;
+}
+.demo-role[data-selected='true'] {
+  border-color: #fff31a;
+  background: #224fc7;
+}
+.demo-role input,
+.demo-prize input,
+.demo-medicine input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.demo-role:has(:focus-visible),
+.demo-prize:has(:focus-visible),
+.demo-medicine:has(:focus-visible) {
+  outline: 3px solid #72ffff;
+  outline-offset: 2px;
+}
+.demo-role img,
+.demo-role-emoji {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+.demo-role-emoji {
+  color: #fff31a;
+  font-size: 36px;
+  text-align: center;
+}
+.demo-role strong {
+  display: block;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 21px;
+}
+.demo-role small {
+  display: block;
+  color: #d3e1ff;
+  font-size: 11px;
+  line-height: 1.35;
+  margin-top: 3px;
+}
+.demo-lobby .game-logo {
+  width: clamp(110px, 22dvh, 175px);
+  margin-top: 0;
+}
+.demo-lobby-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+}
+.demo-join label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #d3e1ff;
+}
+.demo-join > div {
+  display: flex;
+  gap: 8px;
+}
+.demo-join input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  color: white;
+  background: #091f75;
+  border: 1px solid #719bfa;
+  border-radius: 12px;
+  font-size: 16px;
+  min-height: 44px;
+}
+.demo-join input::placeholder {
+  color: #a6bde9;
+}
+.demo-join button,
+.demo-icon-button {
+  height: 44px;
+  min-width: 44px;
+  background: #244fbe;
+  color: white;
+  border: 1px solid #678ee0;
+  border-radius: 12px;
+}
+.demo-footnote {
+  margin-top: auto;
+  text-align: center;
+  color: #bacdf3;
+  font-size: 10px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+.demo-error {
+  background: #581b4f;
+  border: 1px solid #ffa2ce;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.demo-status-card {
+  background: #09277b;
+  border: 1px solid #5e8ee069;
+  border-radius: 16px;
+  padding: 12px;
+  flex-shrink: 0;
+}
+.demo-status-card strong {
+  display: block;
+  font-size: 13px;
+}
+.demo-status-card div > span {
+  display: block;
+  color: #d3e1ff;
+  font-size: 11px;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+.demo-status-card p {
+  color: #b7ffe2;
+  font-size: 11px;
+  margin-top: 8px;
+}
+.demo-status-card p span {
+  color: #8aa6d3;
+  padding: 0 5px;
+}
+.demo-medicines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.demo-medicine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 6px 12px;
+  border: 2px solid #6f9aff55;
+  background: #0a278d;
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+}
+.demo-medicine .artwork {
+  width: 34px;
+  height: 34px;
+}
+.demo-medicine > span:not(.artwork) {
+  flex: 1;
+  font-size: 13px;
+}
+.demo-medicine[data-selected='true'],
+.demo-prize[data-selected='true'] {
+  border-color: #fff31a;
+  background: #2554c6;
+}
+.demo-medicine:has(:disabled) {
+  opacity: 0.55;
+  cursor: default;
+}
+.demo-pager {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  font-size: 11px;
+}
+.demo-pager button {
+  min-height: 40px;
+  width: 44px;
+  color: white;
+  background: #234cba;
+}
+.demo-time {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  gap: 12px;
+}
+.demo-time input {
+  color-scheme: dark;
+  padding: 8px 10px;
+  color: white;
+  background: #091f75;
+  border: 1px solid #719bfa;
+  border-radius: 10px;
+  min-height: 44px;
+  font-size: 16px;
+}
+.demo-prizes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.demo-prize,
+button.demo-prize {
+  display: flex;
+  height: auto;
+  min-height: 88px;
+  padding: 10px 5px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid #6f9aff55;
+  background: #0a278d;
+  border-radius: 14px;
+  position: relative;
+  cursor: pointer;
+  color: white;
+}
+.demo-prize > span:last-child {
+  font-size: 11px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+}
+.demo-prize .prize-art-space {
+  width: 60px;
+  height: 42px;
+}
+.demo-reward-received {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.demo-reward-received p {
+  font-size: 12px;
+}
+.demo-reward-received button {
+  min-height: 44px;
+  white-space: normal;
+  background: #234cba;
+  color: white;
+}
+.demo-patient-panel {
+  text-align: center;
+}
+.demo-patient-star {
+  color: #fff31a;
+  font-size: clamp(40px, 12dvh, 100px);
+  line-height: 1;
+  text-shadow: 0 4px 0 #bd6900;
+}
+.demo-claimed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.demo-claimed .prize-art-space {
+  width: 110px;
+  height: 80px;
+}
+.demo-claimed strong {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 24px;
+  color: #fff31a;
+}
+.demo-waiting {
+  text-align: center;
+}
+.demo-waiting a {
+  text-decoration: underline;
+  font-size: 14px;
+  padding: 12px;
+}
+.demo-invite {
+  text-align: center;
+}
+.demo-invite > button:not(.candy-button) {
+  min-height: 44px;
+  background: #244fbe;
+  color: white;
+}
+.demo-room-code {
+  font-size: 32px;
+  letter-spacing: 3px;
+  color: #fff31a;
+  user-select: all;
+}
+.demo-game-return {
+  min-height: 38px;
+}
+.demo-return-link {
+  color: #fff31a;
+  font-size: 12px;
+  padding: 10px 4px;
+}
+.demo-game-return > span {
+  font-size: 10px;
+}
+.demo-game-notice {
+  position: fixed;
+  z-index: 60;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(92%, 450px);
+  padding: 12px;
+  background: #071c63;
+  color: white;
+  border: 1px solid #a1c9ff;
+  border-radius: 12px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.demo-game-notice button {
+  min-height: 44px;
+}
+@media (max-height: 680px) {
+  .mobile-screen.demo-screen {
+    gap: 8px;
+    padding: 8px 14px;
+  }
+  .demo-lobby .game-logo {
+    width: 100px;
+  }
+  .demo-role-list {
+    gap: 6px;
+  }
+  .demo-role {
+    padding: 9px 10px;
+  }
+  .demo-role strong {
+    font-size: 18px;
+  }
+  .demo-role img,
+  .demo-role-emoji {
+    width: 32px;
+    height: 32px;
+  }
+  .demo-heading h1 {
+    font-size: 26px;
+  }
+  .demo-heading h1 {
+    font-size: 24px;
+    margin: 3px 0;
+    line-height: 1.1;
+  }
+  .demo-live {
+    display: flex;
+    justify-content: center;
+    font-size: 10px;
+    height: 14px;
+  }
+  .demo-code-line {
+    font-size: 11px;
+    line-height: 16px;
+  }
+  .demo-code-line span {
+    font-size: 10px;
+  }
+  .demo-medicines {
+    flex-direction: row;
+  }
+  .demo-medicine {
+    flex: 1;
+    min-width: 0;
+    height: 80px;
+    flex-direction: column;
+    gap: 3px;
+    padding: 5px 3px;
+    justify-content: center;
+  }
+  .demo-medicine .artwork {
+    width: 26px;
+    height: 26px;
+  }
+  .demo-medicine > span:not(.artwork) {
+    font-size: 10px;
+    flex: 0;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+  .demo-medicine > svg {
+    display: none;
+  }
+  .demo-status-card {
+    padding: 9px 10px;
+  }
+  .demo-panel {
+    gap: 8px;
+  }
+  .demo-medicine {
+    height: 66px;
+  }
+  .demo-prize,
+  button.demo-prize {
+    min-height: 72px;
+    padding: 6px 4px;
+  }
+  .demo-prize .prize-art-space {
+    height: 32px;
+    width: 48px;
+  }
+  .demo-panel h2 {
+    font-size: 21px;
+  }
+  .demo-patient-star {
+    font-size: 50px;
+  }
+  .demo-screen .candy-button {
+    height: 44px;
+    font-size: 17px;
+  }
+}
+@media (max-height: 600px) {
+  .mobile-screen.demo-lobby {
+    gap: 6px;
+  }
+  .demo-lobby .game-logo {
+    width: 72px;
+  }
+  .demo-lobby .demo-role {
+    padding-block: 7px;
+  }
+}
+@media (max-height: 460px) {
+  .demo-lobby .game-logo,
+  .demo-patient-star,
+  .demo-code-line span,
+  .demo-footnote,
+  .demo-role small {
+    display: none;
+  }
+  .demo-role-list {
+    flex-direction: row;
+  }
+  .demo-role {
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px;
+    text-align: center;
+  }
+  .demo-role strong {
+    font-size: 15px;
+  }
+  .demo-heading h1 {
+    font-size: 23px;
+  }
+  .demo-heading p,
+  .demo-panel p {
+    font-size: 11px;
+  }
+  .demo-medicines {
+    flex-direction: row;
+  }
+  .demo-medicine {
+    flex: 1;
+    min-width: 0;
+    height: auto;
+    min-height: 66px;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px;
+  }
+  .demo-medicine > span:not(.artwork) {
+    font-size: 9px;
+    overflow-wrap: anywhere;
+  }
+  .demo-medicine > svg {
+    display: none;
+  }
+  .demo-prizes {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .demo-prize,
+  button.demo-prize {
+    min-height: 60px;
+    padding: 4px 2px;
+  }
+  .demo-prize .prize-art-space {
+    width: 35px;
+    height: 25px;
+  }
+  .demo-invite > p,
+  .demo-invite h2 {
+    font-size: 12px;
+  }
+  .demo-invite {
+    gap: 4px;
+  }
+  .demo-room-code {
+    font-size: 22px;
+  }
+}

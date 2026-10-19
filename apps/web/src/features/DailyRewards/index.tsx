@@ -5,7 +5,7 @@ import './rewards.css'
 import type { CSSProperties } from 'react'
 import { useRewardViewport } from './hooks/useRewardViewport'
 
-export default function DailyRewards({ view = 'calendar' }: Props) {
+export default function DailyRewards({ view = 'calendar', caregiver }: Props) {
   const height = useRewardViewport()
   return (
     <section
@@ -14,7 +14,16 @@ export default function DailyRewards({ view = 'calendar' }: Props) {
       style={{ '--reward-height': `${height}px` } as CSSProperties}
       aria-label={view === 'choices' ? 'Choose reward prizes' : 'Daily rewards'}
     >
-      {view === 'choices' ? <PrizeChoices /> : <RewardsCalendarPage />}
+      {view === 'choices' ? (
+        <PrizeChoices caregiver={caregiver} />
+      ) : (
+        <RewardsCalendarPage caregiver={caregiver} />
+      )}
+      {caregiver?.error && (
+        <p className="shared-rewards-error" role="alert">
+          {caregiver.error}
+        </p>
+      )}
     </section>
   )
 }

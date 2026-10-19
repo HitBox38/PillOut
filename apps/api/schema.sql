@@ -2,6 +2,13 @@
 
 PRAGMA foreign_keys = ON;
 
+CREATE TABLE IF NOT EXISTS demo_rooms (
+    code TEXT PRIMARY KEY,
+    state TEXT NOT NULL,
+    revision INTEGER NOT NULL DEFAULT 0,
+    expires_at INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     first_name TEXT NOT NULL,

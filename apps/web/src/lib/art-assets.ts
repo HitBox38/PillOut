@@ -31,6 +31,14 @@ export const UI_ART_SOURCES = [
 ] as const
 
 export const ALL_ART_SOURCES = [
+  '/art/options/staff.png',
+  '/art/options/parents.png',
+  '/art/options/settings.png',
+  '/art/options/close.png',
+  '/art/options/panel.png',
+  '/art/options/arrow.png',
+  '/art/options/heading.png',
+  '/art/options/row.png',
   ...new Set([...Object.values(ART_SOURCES).map(({ src }) => src), ...UI_ART_SOURCES]),
 ]
 

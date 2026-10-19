@@ -74,6 +74,39 @@ def test_missing_avatar_does_not_create_user(client: TestClient) -> None:
     assert client.post("/api/users", json={}).json() == []
 
 
+def test_patient_name_search_is_paginated_and_matches_full_names(client: TestClient) -> None:
+    for first_name, last_name in [
+        ("Ariel", "Levi"),
+        ("Noa", "Cohen"),
+        ("Noa", "Cohen"),
+        ("Noam", "Cohen"),
+        ("Noa", "Levi"),
+        ("Percent%", "Test"),
+    ]:
+        assert (
+            client.post(
+                "/api/user",
+                json={
+                    "first_name": first_name,
+                    "last_name": last_name,
+                },
+            ).status_code
+            == 200
+        )
+    first = client.post("/api/patients/search", json={"query": "noa"}).json()
+    assert len(first["items"]) == 3
+    assert first["has_more"] is True
+    second = client.post("/api/patients/search", json={"query": "NOA", "page": 1}).json()
+    assert len(second["items"]) == 1
+    assert second["has_more"] is False
+    assert {row["id"] for row in first["items"]}.isdisjoint(row["id"] for row in second["items"])
+    full = client.post("/api/patients/search", json={"query": "ariel   levi"}).json()
+    assert full["items"] == [{"id": 1, "name": "Ariel Levi"}]
+    assert client.post("/api/patients/search", json={"query": "missing"}).json()["items"] == []
+    assert client.post("/api/patients/search", json={"query": "%_"}).json()["items"] == []
+    assert client.post("/api/patients/search", json={"query": "   "}).status_code == 422
+
+
 def test_avatar_updates_preserve_legacy_filename_support(client: TestClient) -> None:
     user = client.post(
         "/api/user", json={"first_name": "Ariel", "last_name": "Levi", "avatar_id": 1}

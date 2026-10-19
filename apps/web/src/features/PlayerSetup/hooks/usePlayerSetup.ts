@@ -19,6 +19,8 @@ interface PlayerState {
   nickname: string
   avatar: string
   patientName: string
+  patientId: number | null
+  selectPatient: (id: number, name: string) => void
   selectedPills: MedicineId[]
   schedules: Record<string, PillSchedule>
   update: (
@@ -82,6 +84,15 @@ export const usePlayerSetup = create<PlayerState>((set, get) => ({
   nickname: '',
   avatar: 'dog',
   patientName: '',
+  patientId: null,
+  selectPatient: (id, patientName) => {
+    if (get().patientId === id) {
+      set({ patientName })
+      return
+    }
+    set({ patientId: id, patientName, selectedPills: [], schedules: {} })
+    useGameStore.getState().setMedicines([])
+  },
   selectedPills: [],
   schedules: {},
   update: (values) => set(values),

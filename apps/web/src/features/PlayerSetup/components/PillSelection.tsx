@@ -5,16 +5,18 @@ import { Artwork } from '@/components/artwork'
 import { usePlayerSetup } from '../hooks/usePlayerSetup'
 import { usePillPagination } from '../hooks/usePillPagination'
 import CatalogStatus from './CatalogStatus'
+import PatientSearch from '@/features/PatientSearch'
 
 export default function PillSelection({ onNext }: { onNext: () => void }) {
   const [search, setSearch] = useState('')
+  const [findingPatient, setFindingPatient] = useState(false)
   const {
     patientName,
     selectedPills,
     pills: catalog,
     catalogStatus,
     togglePill,
-    update,
+    selectPatient,
   } = usePlayerSetup()
   const pills = catalog.filter((pill) =>
     pill.name.toLowerCase().includes(search.toLowerCase().trim()),
@@ -23,6 +25,16 @@ export default function PillSelection({ onNext }: { onNext: () => void }) {
     pills.length,
     search,
   )
+  if (findingPatient)
+    return (
+      <PatientSearch
+        onCancel={() => setFindingPatient(false)}
+        onSelect={(patient) => {
+          if (typeof patient.id === 'number') selectPatient(patient.id, patient.name)
+          setFindingPatient(false)
+        }}
+      />
+    )
   return (
     <form
       className="setup-form pills-form"
@@ -35,18 +47,14 @@ export default function PillSelection({ onNext }: { onNext: () => void }) {
         <h1>Choose your pills</h1>
         <span className="demo-badge">DEMO · Staff setup</span>
       </header>
-      <label className="patient-name-field">
-        Patient name
-        <input
-          autoComplete="off"
-          placeholder="Enter patient name"
-          value={patientName}
-          maxLength={80}
-          required
-          pattern=".*\S.*"
-          onChange={(e) => update({ patientName: e.target.value })}
-        />
-      </label>
+      <div className="patient-name-field patient-lookup-field">
+        <span>
+          Patient<strong>{patientName || 'Find a patient to continue'}</strong>
+        </span>
+        <Button type="button" onClick={() => setFindingPatient(true)}>
+          <Search /> Find patient
+        </Button>
+      </div>
       <label className="search-field">
         <span className="sr-only">Search pills</span>
         <Search />
@@ -140,7 +148,7 @@ export default function PillSelection({ onNext }: { onNext: () => void }) {
         <Button
           type="submit"
           className="candy-button"
-          disabled={selectedPills.length === 0 || catalogStatus !== 'ready'}
+          disabled={!patientName || selectedPills.length === 0 || catalogStatus !== 'ready'}
         >
           Next: times & quantities <ChevronRight />
         </Button>

@@ -7,16 +7,20 @@ import Schedule from './components/Schedule'
 import { usePlayerSetup } from './hooks/usePlayerSetup'
 import { useSetupCatalogs } from './hooks/useSetupCatalogs'
 import type { Props } from './types'
+import { useRewardViewport } from '@/features/DailyRewards/hooks/useRewardViewport'
 
 export default function PlayerSetup({ step }: Props) {
   useSetupCatalogs()
   const navigate = useNavigate()
   const player = usePlayerSetup()
+  const height = useRewardViewport()
   const actualStep = step === 'schedule' && !player.selectedPills.length ? 'pills' : step
   return (
     <section
       className={`mobile-screen setup-screen${actualStep === 'pills' ? ' pills-screen' : actualStep === 'welcome' ? ' welcome-screen' : ''}`}
       aria-label="Player setup"
+      style={{ height, minHeight: 0 }}
+      data-compact={height < 460 || undefined}
     >
       <div className="screen-topline">
         <Link
@@ -35,6 +39,8 @@ export default function PlayerSetup({ step }: Props) {
       {actualStep === 'welcome' && (
         <Welcome
           onNext={() => {
+            if (player.userId !== null)
+              player.selectPatient(player.userId, `${player.name.trim()} ${player.surname.trim()}`)
             player.update({
               patientName: player.patientName || `${player.name.trim()} ${player.surname.trim()}`,
             })

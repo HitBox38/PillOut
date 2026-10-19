@@ -7,14 +7,17 @@ import RewardsHeader from './RewardsHeader'
 import PrizeArt from './PrizeArt'
 import { useRewardPagination } from '../hooks/useRewardPagination'
 import RewardPager from './RewardPager'
+import type { CaregiverRewards } from '../types'
 
-export default function PrizeChoices() {
-  const { selected, options, adding, setAdding, selectAll, toggle, add, save } = usePrizeChoices()
-  const nickname = usePlayerSetup((s) => s.nickname.trim())
+export default function PrizeChoices({ caregiver }: { caregiver?: CaregiverRewards }) {
+  const { selected, options, adding, setAdding, selectAll, toggle, add, save } =
+    usePrizeChoices(caregiver)
+  const localNickname = usePlayerSetup((s) => s.nickname.trim())
+  const nickname = caregiver?.name ?? localNickname
   const pager = useRewardPagination(options, 6)
   return (
     <div className="reward-choices-content" data-editing={adding || undefined}>
-      <RewardsHeader choices />
+      <RewardsHeader choices onBack={caregiver?.onBack} />
       {nickname && (
         <p className="reward-recipient">
           A little joy for <strong>{nickname}</strong>
@@ -59,7 +62,7 @@ export default function PrizeChoices() {
           }}
           onCancel={() => setAdding(false)}
         />
-      ) : (
+      ) : !caregiver ? (
         <Button className="add-custom-prize" onClick={() => setAdding(true)}>
           <span>
             <Plus />
@@ -69,7 +72,7 @@ export default function PrizeChoices() {
             <small>Something they love</small>
           </span>
         </Button>
-      )}
+      ) : null}
       {!adding && (
         <>
           <div className="prize-selection-status" aria-live="polite">
@@ -82,11 +85,19 @@ export default function PrizeChoices() {
                 : 'Choose at least one prize to continue.'}
             </p>
           </div>
-          <Button className="candy-button" disabled={!selected.length} onClick={save}>
+          <Button
+            className="candy-button"
+            disabled={!selected.length || caregiver?.pending}
+            onClick={() => void save()}
+          >
             Save reward choices
             <ChevronRight />
           </Button>
-          <p className="rewards-device-note">Arranged by you. Saved on this device.</p>
+          <p className="rewards-device-note">
+            {caregiver
+              ? 'Arranged by you. Shared across your demo devices.'
+              : 'Arranged by you. Saved on this device.'}
+          </p>
         </>
       )}
     </div>
