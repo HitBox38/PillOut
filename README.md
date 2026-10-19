@@ -23,6 +23,16 @@ pnpm run dev
 
 No environment variables are required for the defaults. To change the local API proxy target, copy `apps/web/.env.example` to `apps/web/.env.local` and set `API_PROXY_TARGET`.
 
+## Shared device demo
+
+Open **Shared demo** on the home screen (or `/demo`). Choose a role and create a room on one device. On the other devices, choose their roles and enter the same eight-character room code, or open the role links under **Invite other devices**. Use the same deployed app URL on every device; for local devices on the same network, use the computer’s LAN address on port 5173 instead of `localhost`. The API must be running.
+
+- **Patient:** see Ariel’s sample plan, check in, play a Classic level, and claim a reward after a win.
+- **Medical team:** find the sample patient by name, choose up to three medicine game pieces, and publish a sample time. `/pills` also searches saved patient profiles by first or last name, with paginated results and explicit selection.
+- **Parent:** open Daily Rewards, choose available prizes, see the patient’s win and claimed prize, and mark it received in the prize pocket.
+
+Rooms use synthetic patient data, persist through the API for seven days, and refresh connected devices about every two seconds. Each room demonstrates one reward cycle. The code grants demo access to every role; this is not authenticated patient care. Game rounds stay on the patient’s device, and entering the game copies the latest sample plan into a fresh round. Pending win reports retry after reconnecting or refreshing that tab. Ordinary player setup and local daily rewards remain separate from demo rooms.
+
 ## Repository layout
 
 ```text

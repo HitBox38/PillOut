@@ -15,6 +15,7 @@ import PlayerSetup from '@/features/PlayerSetup'
 import PageTransitions from '@/features/PageTransitions'
 import { GamePage } from '@/pages/game-page'
 import DailyRewards from '@/features/DailyRewards'
+import DemoFlow from '@/features/DemoFlow'
 import { usePlayerSetup } from '@/features/PlayerSetup/hooks/usePlayerSetup'
 
 function Layout() {
@@ -40,6 +41,9 @@ function Intro() {
         <p>Small matches. Big smiles.</p>
       </div>
       <div className="intro-bottom">
+        <Button nativeButton={false} render={<Link to="/demo" />} className="candy-button">
+          Shared demo <ChevronRight />
+        </Button>
         <Button nativeButton={false} render={<Link to="/welcome" />} className="candy-button">
           Let’s play <ChevronRight />
         </Button>
@@ -189,6 +193,27 @@ const rewardChoicesRoute = createRoute({
   path: '/reward-choices',
   component: () => <DailyRewards view="choices" />,
 })
+const demoLobbyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/demo',
+  component: DemoFlow,
+})
+const demoRoomRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/demo/$room/$role',
+  component: () => {
+    const params = demoRoomRoute.useParams()
+    return <DemoFlow {...params} />
+  },
+})
+const demoGameRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/demo/$room/$role/play',
+  component: () => {
+    const params = demoGameRoute.useParams()
+    return <DemoFlow {...params} playing />
+  },
+})
 const router = createRouter({
   routeTree: rootRoute.addChildren([
     introRoute,
@@ -199,6 +224,9 @@ const router = createRouter({
     instructionsRoute,
     rewardsRoute,
     rewardChoicesRoute,
+    demoLobbyRoute,
+    demoRoomRoute,
+    demoGameRoute,
   ]),
   defaultPreload: 'intent',
   scrollRestoration: true,

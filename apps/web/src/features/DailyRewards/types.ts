@@ -20,4 +20,18 @@ export interface RewardProgress {
 
 export interface Props {
   view?: 'calendar' | 'choices'
+  caregiver?: CaregiverRewards
+}
+
+export interface CaregiverRewards {
+  days: RewardDay[]
+  prizes: Prize[]
+  name: string
+  roomCode: string
+  pending: boolean
+  error: string | null
+  onBack: () => void
+  onChoose: () => void
+  onSave: (prizes: Prize[]) => Promise<boolean>
+  onReceive: (date: string) => Promise<boolean>
 }

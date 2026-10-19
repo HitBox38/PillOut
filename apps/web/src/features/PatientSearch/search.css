@@ -1,0 +1,139 @@
+.patient-search-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  color: white;
+}
+.patient-search-panel h2 {
+  font-size: 26px;
+  line-height: 1.15;
+}
+.patient-search-panel p {
+  font-size: 12px;
+  color: #d3e1ff;
+}
+.patient-search-panel label {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.patient-search-input {
+  display: flex;
+  gap: 8px;
+}
+.patient-search-input input {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 8px 12px;
+  background: #09277b;
+  border: 1px solid #729bfa;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+}
+.patient-search-input input::placeholder {
+  color: #a6bde9;
+}
+.patient-search-panel button {
+  min-height: 44px;
+  background: #244fbe;
+  border: 1px solid #678ee0;
+  color: white;
+}
+.patient-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  flex-shrink: 0;
+}
+.patient-search-panel button {
+  min-width: 44px;
+}
+.patient-search-panel > nav,
+.patient-search-panel > header,
+.patient-search-panel > form {
+  flex-shrink: 0;
+}
+@media (max-height: 680px) {
+  .patient-search-panel {
+    gap: 8px;
+  }
+  .patient-search-panel p {
+    line-height: 1.3;
+  }
+}
+.pills-screen[data-compact='true']:has(.patient-search-panel) {
+  grid-template-rows: minmax(0, 1fr);
+}
+.pills-screen[data-compact='true']:has(.patient-search-panel) > .game-logo {
+  display: none;
+}
+button.patient-search-result {
+  display: flex;
+  justify-content: space-between;
+  text-align: left;
+  height: auto;
+  min-height: 58px;
+  padding: 8px 12px;
+  white-space: normal;
+}
+.patient-search-result > span {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.patient-search-result strong {
+  overflow-wrap: anywhere;
+}
+.patient-search-result small {
+  color: #c1d4ff;
+  font-size: 11px;
+}
+.patient-search-panel nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  font-size: 12px;
+}
+.patient-search-cancel {
+  margin-top: auto;
+}
+.patient-lookup-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.patient-lookup-field > span {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+.patient-lookup-field strong {
+  overflow-wrap: anywhere;
+}
+.patient-lookup-field button {
+  min-height: 44px;
+  background: #244fbe;
+  color: white;
+  border: 1px solid #678ee0;
+}
+@media (max-height: 460px) {
+  .patient-search-panel {
+    gap: 8px;
+  }
+  .patient-search-panel header h2 {
+    font-size: 21px;
+  }
+  .patient-search-panel:has(input:focus) .patient-search-results,
+  .patient-search-panel:has(input:focus) nav {
+    display: none;
+  }
+}

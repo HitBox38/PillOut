@@ -18,6 +18,7 @@ from .database import (
     inserted_row_id,
     row_dicts,
 )
+from .demo import router as demo_router
 
 
 class HealthResponse(BaseModel):
@@ -60,6 +61,21 @@ class UserResponse(BaseModel):
 
 class UsersListRequest(BaseModel):
     pass
+
+
+class PatientSearchRequest(BaseModel):
+    query: str = Field(min_length=2, max_length=100)
+    page: int = Field(default=0, ge=0, le=10000)
+
+
+class PatientSearchItem(BaseModel):
+    id: int
+    name: str
+
+
+class PatientSearchResponse(BaseModel):
+    items: list[PatientSearchItem]
+    has_more: bool
 
 
 # --- Drugs ---
@@ -306,6 +322,30 @@ async def create_user(body: UserCreate, db: DbDep) -> UserResponse:
     )
     user_id = _inserted_id(result)
     return await _require_user(db, user_id)
+
+
+@router.post("/patients/search", tags=["users"])
+async def search_patients(body: PatientSearchRequest, db: DbDep) -> PatientSearchResponse:
+    query = " ".join(body.query.split())
+    if len(query) < 2:
+        raise HTTPException(422, "Enter at least two characters of the patient's name.")
+    escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    result = await db.execute(
+        "SELECT id, first_name, last_name FROM users "
+        "WHERE (first_name || ' ' || last_name) LIKE ? ESCAPE '\\' COLLATE NOCASE "
+        "ORDER BY first_name COLLATE NOCASE, last_name COLLATE NOCASE, id LIMIT 4 OFFSET ?",
+        [f"%{escaped}%", body.page * 3],
+    )
+    rows = row_dicts(result)
+    return PatientSearchResponse(
+        items=[
+            PatientSearchItem(
+                id=cell_int(row["id"]), name=f"{row['first_name']} {row['last_name']}"
+            )
+            for row in rows[:3]
+        ],
+        has_more=len(rows) > 3,
+    )
 
 
 @router.post("/get_user", response_model=UserResponse, tags=["users"])
@@ -584,3 +624,4 @@ async def delete_user_avatar(body: UserAvatarIdRequest, db: DbDep) -> None:
 
 
 app.include_router(router)
+app.include_router(demo_router)

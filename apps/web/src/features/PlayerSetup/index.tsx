@@ -21,10 +21,10 @@ export default function PlayerSetup({ step }: Props) {
       style={
         actualStep === 'schedule'
           ? { height: `calc(${viewportHeight}px - var(--plan-inset, 0px))` }
-          : undefined
+          : { height: viewportHeight, minHeight: 0 }
       }
       aria-label="Player setup"
-      data-compact={(actualStep === 'schedule' && viewportHeight < 470) || undefined}
+      data-compact={viewportHeight < (actualStep === 'schedule' ? 470 : 460) || undefined}
     >
       <div className="screen-topline">
         <Link
@@ -43,6 +43,8 @@ export default function PlayerSetup({ step }: Props) {
       {actualStep === 'welcome' && (
         <Welcome
           onNext={() => {
+            if (player.userId !== null)
+              player.selectPatient(player.userId, `${player.name.trim()} ${player.surname.trim()}`)
             player.update({
               patientName: player.patientName || `${player.name.trim()} ${player.surname.trim()}`,
             })

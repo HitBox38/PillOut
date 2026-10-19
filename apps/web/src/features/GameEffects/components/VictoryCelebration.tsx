@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { Play, Trophy } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Avatar } from '@/features/PlayerSetup/components/Avatar'
@@ -15,6 +15,7 @@ interface Props {
   level: number
   rescuedBears?: number
   onContinue: () => void
+  rewardAction?: ReactNode
 }
 
 export default function VictoryCelebration({
@@ -23,6 +24,7 @@ export default function VictoryCelebration({
   level,
   rescuedBears,
   onContinue,
+  rewardAction,
 }: Props) {
   const reduced = useReducedMotion()
   const hasReward = useDailyRewards((s) => s.days.some((day) => !day.prize))
@@ -63,11 +65,12 @@ export default function VictoryCelebration({
       </h2>
       <p className="victory-score">{score.toLocaleString()} points</p>
       <p>Level {level} complete. Progress saved!</p>
-      {hasReward && (
-        <Button nativeButton={false} render={<Link to="/rewards" />} className="candy-button">
-          Choose my daily reward
-        </Button>
-      )}
+      {rewardAction ??
+        (hasReward && (
+          <Button nativeButton={false} render={<Link to="/rewards" />} className="candy-button">
+            Choose my daily reward
+          </Button>
+        ))}
       <Button className="candy-button" onClick={onContinue}>
         Level {level + 1} <Play />
       </Button>

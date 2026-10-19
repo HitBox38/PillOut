@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { MouseEvent } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
   CircleHelp,
@@ -45,7 +45,10 @@ const DIFFICULTY_LABELS = {
   challenge: 'CHALLENGE',
 }
 
-export function GamePage() {
+export function GamePage({
+  demoNavigation,
+  demoRewardAction,
+}: { demoNavigation?: ReactNode; demoRewardAction?: ReactNode } = {}) {
   const score = useGameStore((s) => s.score)
   const best = useGameStore((s) => s.best)
   const moves = useGameStore((s) => s.moves)
@@ -85,15 +88,27 @@ export function GamePage() {
       data-reduced={reducedMotion || undefined}
     >
       <div className="screen-topline game-topline">
-        <Link to="/" className="art-button" aria-label="Back to home">
-          <img src="/art/back.png" alt="" draggable={false} />
-        </Link>
+        {demoNavigation ?? (
+          <Link to="/" className="art-button" aria-label="Back to home">
+            <img src="/art/back.png" alt="" draggable={false} />
+          </Link>
+        )}
         <span className="step-label">
           {mode === 'classic'
             ? `CHAPTER ${level.chapter} · ${DIFFICULTY_LABELS[level.difficulty]}`
             : 'ZEN ADVENTURE'}
         </span>
-        <GameMenu onSettings={() => setSettingsOpen(true)} />
+        {demoNavigation ? (
+          <Button
+            className="art-button"
+            aria-label="Game settings"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <Settings />
+          </Button>
+        ) : (
+          <GameMenu onSettings={() => setSettingsOpen(true)} />
+        )}
       </div>
       <div className="game-dashboard">
         <div className="game-stat goal-stat" data-won={outcome === 'won' || undefined}>
@@ -178,6 +193,7 @@ export function GamePage() {
               level={level.number}
               rescuedBears={rescueGoal ? rescue?.rescued.length : undefined}
               onContinue={() => game().nextLevel()}
+              rewardAction={demoRewardAction}
             />
           ) : (
             <RoundOverlay
@@ -261,7 +277,12 @@ export function GamePage() {
           <span className="booster-orb">{paused ? <Play /> : <Pause />}</span>
           <span>{paused ? 'Resume' : 'Pause'}</span>
         </Button>
-        <GameSettings open={settingsOpen} onOpenChange={setSettingsOpen} onRestart={setRestart} />
+        <GameSettings
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          onRestart={setRestart}
+          demo={!!demoNavigation}
+        />
       </div>
       <GameEffects />
       <Dialog
@@ -303,10 +324,12 @@ function GameSettings({
   open,
   onOpenChange,
   onRestart,
+  demo = false,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onRestart: (mode: Mode) => void
+  demo?: boolean
 }) {
   const sound = useGameStore((s) => s.sound)
   const reducedMotion = useGameStore((s) => s.reducedMotion)
@@ -361,12 +384,16 @@ function GameSettings({
         >
           <RotateCcw /> New game
         </Button>
-        <Button nativeButton={false} render={<Link to="/pills" />} variant="link">
-          Edit demo pill plan
-        </Button>
-        <Button nativeButton={false} render={<Link to="/how-to-play" />} variant="link">
-          <CircleHelp /> How to play
-        </Button>
+        {!demo && (
+          <Button nativeButton={false} render={<Link to="/pills" />} variant="link">
+            Edit demo pill plan
+          </Button>
+        )}
+        {!demo && (
+          <Button nativeButton={false} render={<Link to="/how-to-play" />} variant="link">
+            <CircleHelp /> How to play
+          </Button>
+        )}
       </DialogContent>
     </Dialog>
   )

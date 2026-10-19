@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { DEFAULT_PRIZES, PRIZES } from '../constants'
 import { useDailyRewards } from './useDailyRewards'
-import type { Prize } from '../types'
+import type { CaregiverRewards, Prize } from '../types'
 
-export function usePrizeChoices() {
+export function usePrizeChoices(caregiver?: CaregiverRewards) {
   const navigate = useNavigate()
   const [selected, setSelected] = useState(() => {
-    const saved = useDailyRewards.getState().prizes
+    const saved = caregiver?.prizes ?? useDailyRewards.getState().prizes
     return saved.length ? saved : DEFAULT_PRIZES
   })
   const [adding, setAdding] = useState(false)
@@ -32,7 +32,11 @@ export function usePrizeChoices() {
       setSelected((previous) => [...previous, prize])
       setAdding(false)
     },
-    save: () => {
+    save: async () => {
+      if (caregiver) {
+        if (await caregiver.onSave(selected)) caregiver.onBack()
+        return
+      }
       useDailyRewards.getState().savePrizes(selected)
       void navigate({ to: '/rewards' })
     },
