@@ -4,6 +4,8 @@ import type { MedicineId } from '@/game/medicines'
 export type SpriteFrame = readonly [x: number, y: number, width: number, height: number]
 
 export const ART_SOURCES = {
+  rewards: { src: '/art/daily-rewards-reference.png', width: 739 },
+  prizes: { src: '/art/prizes-reference.png', width: 739 },
   avatars: { src: '/art/avatars.png', width: 1774 },
   setup: { src: '/art/setup-reference.jpg', width: 1905 },
   game: { src: '/art/game-reference.jpg', width: 739 },

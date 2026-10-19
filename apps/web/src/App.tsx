@@ -12,6 +12,7 @@ import { SPECIAL_ART } from '@/lib/art-assets'
 import PlayerSetup from '@/features/PlayerSetup'
 import PageTransitions from '@/features/PageTransitions'
 import { GamePage } from '@/pages/game-page'
+import DailyRewards from '@/features/DailyRewards'
 
 function Layout() {
   return (
@@ -164,6 +165,16 @@ const instructionsRoute = createRoute({
   path: '/how-to-play',
   component: HowToPlay,
 })
+const rewardsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/rewards',
+  component: DailyRewards,
+})
+const rewardChoicesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/reward-choices',
+  component: () => <DailyRewards view="choices" />,
+})
 const router = createRouter({
   routeTree: rootRoute.addChildren([
     introRoute,
@@ -172,6 +183,8 @@ const router = createRouter({
     planRoute,
     gameRoute,
     instructionsRoute,
+    rewardsRoute,
+    rewardChoicesRoute,
   ]),
   defaultPreload: 'intent',
   scrollRestoration: true,

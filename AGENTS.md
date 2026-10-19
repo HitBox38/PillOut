@@ -5,6 +5,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), [CONTEXT.md](CONTEXT.md), and the [skil
 ## Project constraints
 
 - Keep the app mobile first. Verify touch interactions and narrow layouts before expanding desktop layouts.
+- Treat the product as mobile-only: every screen and dialog must fit the available viewport without page or nested scrolling. Use compact layouts and pagination for growing content; keep primary actions visible, including when the on-screen keyboard is open.
 - Follow the project's designer for visual direction. Implement the supplied designs and preserve their intent.
 - Use React, TypeScript, PixiJS, Zustand, shadcn's **Base UI** components, and TanStack Router. Preserve these choices unless the task explicitly changes them.
 - Use the pnpm version pinned in `package.json`. Translate imported skill examples from `npm run` to `pnpm run`, `npx` for installed tools to `pnpm exec`, and `npx` for temporary tools to `pnpm dlx`.

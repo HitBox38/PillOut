@@ -37,6 +37,11 @@ Preferences, personal best, the next unlocked level, and its capped loss count p
 
 ## Architecture
 
+Daily rewards grant one claim for the first Classic level won on each local calendar day. Zen, losses, and abandoned attempts do not earn rewards. Missed days preserve the seven-day track, and unclaimed days remain available. Caregivers save a selection of preset or custom prizes; each claim snapshots one selected prize into the child's prize pocket, where it can be marked received. Choices must be saved before the first claim. Rewards, prize choices, and received status persist only on this device, without API storage or authentication. Milestones at 8, 15, 22, and 30 days celebrate total reward days; they do not grant extra prizes.
+
+- `apps/web/src/features/DailyRewards/`: reward rules, persisted Zustand state, seven-day calendar, prize claims, and caregiver choices. The game store records rewards at the resolved Classic win boundary. `/rewards` and `/reward-choices` expose the feature.
+- Reward screens fit the available mobile viewport without page or nested scrolling. Caregiver choices paginate six prizes at a time, claims paginate four options, and the prize pocket shows one saved prize at a time. Custom-prize entry replaces the chooser while editing and follows the visual viewport height so its controls remain visible above the on-screen keyboard.
+
 - `apps/web/src/game/engine.ts`: pure level configuration, board generation, adjacency, matching, legal moves, swaps, and gravity/refill. Generation, refill, and shuffle accept the session's tile pool; `game/medicines.ts` defines the available medicine IDs.
 - `apps/web/src/game/store.ts`: Zustand session lifecycle, async resolution, score, outcome, saved level progression, retry help, preferences, and persistence.
 - `apps/web/src/components/game-board.tsx`: Pixi application lifecycle, capsule presentation, interpolation, and the semantic HTML input grid.

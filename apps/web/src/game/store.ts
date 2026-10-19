@@ -25,6 +25,7 @@ import {
   systemReducesMotion,
 } from './effects'
 import type { ClearWave, BoardRemix, GameInput } from './effects'
+import { useDailyRewards } from '@/features/DailyRewards/hooks/useDailyRewards'
 
 export type Mode = 'classic' | 'zen'
 type Phase = 'idle' | 'swapping' | 'clearing' | 'falling' | 'shuffling'
@@ -309,7 +310,10 @@ export const useGameStore = create<GameState>()(
                 : {}
             : {}),
         })
-        if (outcome === 'won' && get().sound) playGameSound('win')
+        if (outcome === 'won') {
+          useDailyRewards.getState().recordWin(state.level.number)
+          if (get().sound) playGameSound('win')
+        }
       },
       showHint: () => {
         if (get().phase !== 'idle' || get().paused || get().outcome !== 'playing') return
