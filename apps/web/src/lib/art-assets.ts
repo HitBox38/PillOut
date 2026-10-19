@@ -21,6 +21,19 @@ export const ART_SOURCES = {
 
 export type ArtSource = keyof typeof ART_SOURCES
 
+export const UI_ART_SOURCES = [
+  '/art/back.png',
+  '/art/board.png',
+  '/art/menu.png',
+  '/art/pill-out-logo.png',
+  '/art/sheba-logo.png',
+  '/art/title.png',
+] as const
+
+export const ALL_ART_SOURCES = [
+  ...new Set([...Object.values(ART_SOURCES).map(({ src }) => src), ...UI_ART_SOURCES]),
+]
+
 // Pixel frames reference the original transparent 5 × 2 atlas; no image copies per pill.
 export const PILL_FRAMES = {
   pinkCapsule: [38, 50, 375, 337],

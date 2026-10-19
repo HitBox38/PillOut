@@ -54,6 +54,36 @@ p {
   position: relative;
   overflow: hidden;
 }
+.asset-loading-shell {
+  height: 100dvh;
+  display: grid;
+}
+.mobile-screen.asset-loading-screen {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+.asset-loading-content {
+  width: min(100%, 300px);
+  display: grid;
+  gap: 20px;
+  text-align: center;
+}
+.asset-loading-content h1 {
+  font-size: clamp(32px, 7dvh, 48px);
+}
+.asset-loading-content output {
+  font-size: 14px;
+  color: #d9e5ff;
+}
+.asset-loading-progress [data-slot='progress-track'] {
+  height: 10px;
+  background: #06175e;
+}
+.asset-loading-progress [data-slot='progress-indicator'] {
+  background: #fff31a;
+}
 h1,
 h2,
 legend,
@@ -811,12 +841,6 @@ fieldset {
 }
 .pill-blue {
   --pill-color: #00b8ff;
-}
-.board-loading {
-  display: grid;
-  place-items: center;
-  color: #14378c;
-  font-weight: 700;
 }
 .board-blurred {
   filter: blur(5px);

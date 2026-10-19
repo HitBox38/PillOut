@@ -1,12 +1,13 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- The interactive ARIA grid uses rows and gridcells for keyboard navigation, not a data table. */
 import { useEffect, useRef, useState } from 'react'
-import { Application, Assets, Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js'
+import { Application, Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js'
 import { SIZE } from '@/game/engine'
 import type { Pill } from '@/game/engine'
 import { useGameStore } from '@/game/store'
 import { Artwork } from '@/components/artwork'
 import BearRescue from '@/features/BearRescue'
 import { ART_SOURCES, TILE_ART, SPECIAL_ART, getTileArt } from '@/lib/art-assets'
+import { loadArtImage } from '@/lib/preload-assets'
 import { systemReducesMotion, BIRTH_DURATION } from '@/game/effects'
 import { BoardEffects, CELL, BOARD_WIDTH as WIDTH, easeOut } from './game-board-effects'
 import type { TileTextures } from './game-board-effects'
@@ -81,7 +82,7 @@ export function GameBoard() {
           await Promise.all(
             sources.map(
               async (source) =>
-                [source, await Assets.load<Texture>(ART_SOURCES[source].src)] as const,
+                [source, Texture.from(await loadArtImage(ART_SOURCES[source].src))] as const,
             ),
           ),
         )
